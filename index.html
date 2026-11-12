@@ -1,0 +1,1244 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<title>Loja</title>
+<meta name="theme-color" content="#6B4226">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Rick e Tati">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icone.svg">
+<link rel="apple-touch-icon" href="icone-180.png">
+<style>
+  :root{--azul:#6B4226;--azul-claro:#F3E9E1;--rosa:#FBEDEA;--verde:#2e7d32;--vermelho:#b3261e;--laranja:#FFF4E0;--bg:#F8F4F0;--borda:#E2D6CC;}
+  *{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,'Segoe UI',Roboto,sans-serif;-webkit-tap-highlight-color:transparent;}
+  body{background:var(--bg);color:#222;padding-bottom:150px;}
+  header{background:var(--azul);color:#fff;padding:16px 16px 14px;position:sticky;top:0;z-index:5;}
+  header h1{font-size:18px;}
+  header .sub{font-size:11px;opacity:.85;margin-top:2px;display:flex;justify-content:space-between;}
+  header button{background:rgba(255,255,255,.18);border:none;color:#fff;border-radius:14px;padding:3px 10px;font-size:11px;}
+  main{padding:12px;}
+  .aba{display:none;}.aba.ativa{display:block;}
+  .card{background:#fff;border-radius:12px;padding:14px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,.06);}
+  .card h2{font-size:14px;color:var(--azul);margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;gap:6px;}
+  .tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;}
+  .tile{background:#fff;border-radius:12px;padding:12px;box-shadow:0 1px 3px rgba(0,0,0,.06);}
+  .tile .l{font-size:11px;color:#777;font-weight:600;}
+  .tile .v{font-size:20px;font-weight:800;color:var(--azul);margin-top:3px;}
+  .tile .s{font-size:11px;color:#888;margin-top:2px;}
+  .tile.largo{grid-column:1/3;}
+  .linha{display:flex;justify-content:space-between;gap:8px;padding:8px 0;border-bottom:1px solid #f0f0f0;font-size:13.5px;}
+  .linha:last-child{border-bottom:none;}
+  .muted{color:#888;font-size:12px;}
+  .vazio{color:#999;font-size:13px;text-align:center;padding:14px 0;}
+  .chip{display:inline-block;font-size:11px;font-weight:700;padding:2px 9px;border-radius:12px;background:#eee;color:#555;white-space:nowrap;}
+  .chip.Encomendado{background:#EFE3D6;color:#6B4226;}
+  .chip.Em{background:#FFF4E0;color:#8a5300;}
+  .chip.Pronto{background:#e8f5e9;color:var(--verde);}
+  .chip.Entregue{background:#eee;color:#666;}
+  .chip.Cancelado{background:var(--rosa);color:var(--vermelho);}
+  .chip.Aguardando{background:#FFF4E0;color:#8a5300;}
+  .pg{display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px;margin-top:6px;}
+  .pg.ok{background:#e8f5e9;color:var(--verde);}
+  .pg.esp{background:#FFF4E0;color:#8a5300;}
+  .pg.conf{background:#EFE3D6;color:#6B4226;}
+  .clicavel{cursor:pointer;}
+  .clicavel:active{opacity:.7;}
+  .linha.clicavel span:first-child::after{content:' ›';color:#b9a595;}
+  .lucro{font-size:12px;font-weight:700;color:var(--verde);}
+  .lucro.neg{color:var(--vermelho);}
+  .mesnav{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;}
+  .mesnav button{border:none;background:var(--azul-claro);color:var(--azul);font-weight:700;border-radius:8px;padding:6px 12px;font-size:15px;}
+  .segs{display:flex;gap:6px;overflow-x:auto;margin-bottom:12px;padding-bottom:2px;}
+  .segs button{flex-shrink:0;border:1px solid var(--borda);background:#fff;border-radius:18px;padding:8px 12px;font-size:13px;font-weight:700;color:#5a4a40;}
+  .segs button.on{background:var(--azul);color:#fff;border-color:var(--azul);}
+  nav button{min-width:0;}
+  .fila{background:#EFE3D6;color:#4E342E;border-radius:10px;padding:10px 12px;font-size:12.5px;margin-bottom:12px;}
+  .alerta{background:var(--laranja);color:#6b4100;border-radius:10px;padding:10px 12px;font-size:12.5px;margin-bottom:12px;}
+  .erro{background:var(--rosa);color:var(--vermelho);}
+  label{display:block;font-size:12px;color:#555;font-weight:600;margin:10px 0 4px;}
+  input,select,textarea{width:100%;padding:11px;border-radius:10px;border:1px solid var(--borda);font-size:16px;background:#fff;}
+  textarea{min-height:60px;resize:vertical;}
+  .g2{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+  .btn{display:block;width:100%;text-align:center;border:none;border-radius:10px;padding:13px;font-size:15px;font-weight:700;background:var(--azul);color:#fff;text-decoration:none;margin-top:12px;}
+  .btn.sec{background:#EFE7E0;color:#333;}
+  .btn.zap{background:#25D366;}
+  .btn:disabled{opacity:.5;}
+  .mini{display:inline-block;border:none;border-radius:8px;padding:7px 10px;font-size:12.5px;font-weight:600;background:#EFE7E0;color:#333;text-decoration:none;}
+  .mini.zap{background:#25D366;color:#fff;}
+  .acoes{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;}
+  .enc .topo{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;}
+  .enc .nome{font-weight:700;font-size:15px;}
+  .enc .prod{font-size:13.5px;margin-top:2px;}
+  .dia{font-size:12px;font-weight:800;color:var(--azul);text-transform:uppercase;letter-spacing:.3px;margin:16px 4px 6px;}
+  .msg{font-size:13px;padding:10px;border-radius:10px;margin-top:10px;display:none;}
+  .msg.ok{display:block;background:#e8f5e9;color:var(--verde);}
+  .msg.err{display:block;background:var(--rosa);color:var(--vermelho);}
+  .seg{display:flex;background:#EDE4DC;border-radius:10px;padding:3px;margin-bottom:12px;}
+  .seg button{flex:1;border:none;background:none;padding:9px;border-radius:8px;font-size:13.5px;font-weight:700;color:#555;}
+  .seg button.on{background:#fff;color:var(--azul);box-shadow:0 1px 2px rgba(0,0,0,.08);}
+  nav{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid var(--borda);display:flex;padding-bottom:calc(58px + env(safe-area-inset-bottom));z-index:9;}
+  nav button{flex:1;border:none;background:none;padding:9px 2px 10px;font-size:11px;font-weight:600;color:#888;display:flex;flex-direction:column;align-items:center;gap:2px;}
+  nav button span{font-size:21px;}
+  nav button.on{color:var(--azul);}
+  .carregando{position:fixed;inset:0;background:rgba(240,244,248,.85);display:flex;align-items:center;justify-content:center;font-size:14px;color:#555;z-index:20;}
+  .oculto{display:none !important;}
+  .modal{position:fixed;inset:0;background:rgba(0,0,0,.4);display:none;align-items:flex-end;z-index:15;}
+  .modal.aberto{display:flex;}
+  .folha{background:var(--bg);width:100%;max-height:92vh;overflow:auto;border-radius:16px 16px 0 0;padding:16px 14px calc(16px + env(safe-area-inset-bottom));}
+  .folha h3{color:var(--azul);font-size:17px;margin-bottom:4px;display:flex;justify-content:space-between;}
+  .folha h3 button{border:none;background:none;font-size:22px;color:#888;}
+</style>
+</head>
+<body>
+<header>
+  <h1 id="tLoja">Loja</h1>
+  <div class="sub"><span id="tAtual">carregando...</span><button onclick="carregar()">↻ Atualizar</button></div>
+</header>
+
+<main>
+  <!-- HOJE -->
+  <section class="aba ativa" id="aba-hoje">
+    <div id="avisoSync"></div>
+    <div id="filaHoje"></div>
+    <div class="tiles">
+      <div class="tile"><div class="l">Vendas hoje</div><div class="v" id="hTotal">-</div><div class="s" id="hN"></div></div>
+      <div class="tile"><div class="l">Caixa</div><div class="v" id="hCaixa" style="font-size:16px;">-</div><div class="s" id="hCaixaS"></div></div>
+      <div class="tile largo" id="hPag"></div>
+    </div>
+    <div class="card">
+      <h2>Mês atual</h2>
+      <div class="linha"><span>Balcão</span><b id="mBalcao"></b></div>
+      <div class="linha clicavel" onclick="irPara('enc')"><span>Encomendas entregues</span><b id="mEnc"></b></div>
+      <div class="linha clicavel" onclick="abrirCustos()"><span>Despesas (sem mercadoria)</span><b id="mDesp"></b></div>
+      <div class="linha clicavel" onclick="abrirCustos()"><span>Compras de mercadoria</span><b id="mCompras"></b></div>
+      <div class="linha"><span>Ticket médio no balcão</span><b id="mTicket"></b></div>
+      <div class="linha"><span><b>Lucro estimado</b></span><b id="mLucro"></b></div>
+    </div>
+    <div class="card" id="cardProducao"><h2><span>🧁 Produção</span>
+      <span class="seg" style="margin:0;padding:2px;"><button class="on" id="prodHoje" onclick="diaProducao='hoje';renderProducao()" style="padding:5px 10px;font-size:12px;">Hoje</button><button id="prodAmanha" onclick="diaProducao='amanha';renderProducao()" style="padding:5px 10px;font-size:12px;">Amanhã</button></span></h2>
+      <div id="hProducao"></div></div>
+    <div class="card oculto" id="cardRecompra"><h2>🎉 Faz um ano: oferecer de novo</h2><div id="hRecompra"></div></div>
+    <div class="card"><h2>🎂 Próximas encomendas</h2><div id="hEnc"></div></div>
+    <div class="card"><h2>🔴 Repor <span class="chip" id="nRepor">0</span></h2><div id="hRepor"></div></div>
+    <div class="card"><h2>⏳ Validade próxima <span class="chip" id="nVence">0</span></h2><div id="hVence"></div></div>
+  </section>
+
+  <!-- ENCOMENDAS -->
+  <section class="aba" id="aba-enc">
+    <div class="g2">
+      <button class="btn" style="margin-top:0;" onclick="abrirNovaEncomenda()">+ Nova encomenda</button>
+      <button class="btn sec" style="margin-top:0;" onclick="compartilharLinkEncomendas()">🔗 Link p/ clientes</button>
+    </div>
+    <div id="pixConferir"></div>
+    <div class="card" style="margin-top:12px;">
+      <h2>📅 Datas fechadas</h2>
+      <div class="muted" style="margin-bottom:8px;">Dias de folga ou sem produção: somem da página de encomendas.</div>
+      <div style="display:flex;gap:8px;"><input id="dfData" type="date" style="flex:1;"><button class="mini" style="background:var(--azul);color:#fff;padding:0 14px;" onclick="fecharData()">Fechar</button></div>
+      <div id="dfMsg" class="muted" style="margin-top:6px;"></div>
+      <div id="dfLista" style="margin-top:6px;"></div>
+    </div>
+    <div id="listaEnc"></div>
+    <div class="card" style="margin-top:14px;"><h2>📊 Encomendas do mês por produto</h2><div id="encProdutos"></div></div>
+    <div class="card"><h2>🍰 Margem do cardápio</h2><div id="margens"></div></div>
+  </section>
+
+  <!-- COMPRAS -->
+  <section class="aba" id="aba-compras">
+    <div class="alerta" style="background:var(--azul-claro);color:#4E342E;">Entra aqui o que está no mínimo ou acaba em menos de 7 dias. A quantidade sugerida cobre 14 dias de venda, em caixas fechadas quando o produto tem caixa cadastrada.</div>
+    <div id="listaCompras"></div>
+  </section>
+
+  <!-- LANÇAR -->
+  <section class="aba" id="aba-lancar">
+    <div id="filaLancar"></div>
+    <div class="seg"><button class="on" id="segDesp" onclick="segmento('desp')">💸 Despesa</button><button id="segEnt" onclick="segmento('ent')">📥 Entrada de mercadoria</button></div>
+
+    <div class="card" id="formDesp">
+      <label>Tipo</label>
+      <select id="dTipo"><option>Despesa</option><option>Receita</option></select>
+      <label>Categoria</label>
+      <select id="dCat"><option>Mercadoria p/ revenda</option><option>Ingredientes</option><option>Embalagem</option><option>Aluguel</option><option>Energia/Água</option><option>DAS MEI</option><option>Equipamento</option><option>Marketing</option><option>Taxa de cartão</option><option>Outros</option></select>
+      <div class="g2">
+        <div><label>Valor (R$)</label><input id="dValor" type="number" inputmode="decimal" step="0.01"></div>
+        <div><label>Data</label><input id="dData" type="date"></div>
+      </div>
+      <label>Descrição</label><input id="dDesc" placeholder="ex: conta de luz de outubro">
+      <button class="btn" id="btnDesp" onclick="lancarDespesa()">Lançar</button>
+      <div class="msg" id="msgDesp"></div>
+    </div>
+
+    <div class="card oculto" id="formEnt">
+      <label>Produto</label>
+      <select id="eProduto" onchange="ajustarEntrada()"></select>
+      <div id="eCaixaBox" class="oculto">
+        <label>Contar em</label>
+        <select id="eEmCaixas" onchange="ajustarEntrada()"><option value="1">Caixas fechadas</option><option value="0">Unidades</option></select>
+      </div>
+      <div class="g2">
+        <div><label id="eQtdLabel">Quantidade</label><input id="eQtd" type="number" inputmode="numeric" step="1" oninput="ajustarEntrada()"></div>
+        <div><label>Custo por unidade (R$)</label><input id="eCusto" type="number" inputmode="decimal" step="0.01" oninput="ajustarEntrada()"></div>
+      </div>
+      <label>Validade (opcional)</label><input id="eValidade" type="date">
+      <label style="display:flex;gap:8px;align-items:center;font-weight:500;"><input type="checkbox" id="eLancar" checked style="width:auto;"> Lançar a compra como despesa</label>
+      <div class="muted" id="eResumo" style="margin-top:8px;"></div>
+      <button class="btn" id="btnEnt" onclick="darEntrada()">Registrar entrada</button>
+      <div class="msg" id="msgEnt"></div>
+      <div class="muted" style="margin-top:10px;">O estoque oficial fica no PDV do balcão. A entrada registrada aqui é somada lá na próxima sincronização.</div>
+      <div id="listaEntradas" style="margin-top:10px;"></div>
+    </div>
+
+    <div class="card" id="cardCustos">
+      <h2><span>📒 Lançamentos do mês</span></h2>
+      <div class="mesnav"><button onclick="mudarMes(-1)">‹</button><b id="custosMes"></b><button onclick="mudarMes(1)">›</button></div>
+      <div id="custosResumo" class="muted" style="margin-bottom:6px;"></div>
+      <div id="listaCustos"></div>
+      <div class="muted" style="margin-top:6px;">Toque num lançamento para corrigir ou excluir.</div>
+    </div>
+  </section>
+  <!-- GESTÃO -->
+  <section class="aba" id="aba-gestao">
+    <div class="segs" id="segG">
+      <button class="on" data-s="cardapio" onclick="segG('cardapio')">🍰 Cardápio</button>
+      <button data-s="fichas" onclick="segG('fichas')">🧾 Fichas</button>
+      <button data-s="ingredientes" onclick="segG('ingredientes')">🥚 Ingredientes</button>
+      <button data-s="balcao" onclick="segG('balcao')">🍬 Balcão</button>
+      <button data-s="ajustes" onclick="segG('ajustes')">⚙️ Ajustes</button>
+    </div>
+    <div id="gAviso"></div>
+    <div id="gConteudo"></div>
+  </section>
+</main>
+
+<nav>
+  <button class="on" data-aba="hoje"><span>🏠</span>Hoje</button>
+  <button data-aba="enc"><span>🎂</span>Encomendas</button>
+  <button data-aba="compras"><span>🛒</span>Compras</button>
+  <button data-aba="lancar"><span>💸</span>Lançar</button>
+  <button data-aba="gestao"><span>🧰</span>Gestão</button>
+</nav>
+
+<!-- Formulário da gestão -->
+<div class="modal" id="modalG"><div class="folha">
+  <h3><span id="gTitulo"></span> <button onclick="fecharModais()">×</button></h3>
+  <div id="gCorpo"></div>
+  <div class="msg" id="gMsg"></div>
+  <datalist id="dlInsumos"></datalist>
+  <datalist id="dlCategorias"></datalist>
+</div></div>
+
+<!-- Editar encomenda -->
+<div class="modal" id="modalEdit"><div class="folha">
+  <h3><span id="edTitulo">Encomenda</span> <button onclick="fecharModais()">×</button></h3>
+  <div id="edInfo" class="muted" style="margin-bottom:6px;white-space:pre-line;"></div>
+  <label>Status</label><select id="edStatus"></select>
+  <label>Cliente</label><input id="edCliente">
+  <label>WhatsApp</label><input id="edWhats" type="tel" inputmode="tel">
+  <label>Produto</label><input id="edProduto">
+  <div class="g2">
+    <div><label>Quantidade</label><input id="edQtd" type="number" inputmode="decimal" step="0.5"></div>
+    <div><label>Data</label><input id="edData" type="date"></div>
+  </div>
+  <div class="g2">
+    <div><label>Horário</label><input id="edHorario" type="time"></div>
+    <div><label>Sinal (R$)</label><input id="edSinal" type="number" inputmode="decimal" step="0.01"></div>
+  </div>
+  <div class="g2">
+    <div><label>Valor total (R$)</label><input id="edValor" type="number" inputmode="decimal" step="0.01" oninput="lucroEd()"></div>
+    <div><label>Custo (R$)</label><input id="edCusto" type="number" inputmode="decimal" step="0.01" oninput="lucroEd()"></div>
+  </div>
+  <div id="edLucro" class="lucro" style="margin-top:8px;font-size:14px;"></div>
+  <label>Observações</label><textarea id="edObs"></textarea>
+  <button class="btn" id="btnEd" onclick="salvarEdicao()">Salvar alterações</button>
+  <div class="msg" id="msgEd"></div>
+</div></div>
+
+<!-- Editar lançamento -->
+<div class="modal" id="modalMov"><div class="folha">
+  <h3>Lançamento <button onclick="fecharModais()">×</button></h3>
+  <label>Tipo</label><select id="mvTipo"><option>Despesa</option><option>Receita</option></select>
+  <label>Categoria</label><select id="mvCat"></select>
+  <div class="g2">
+    <div><label>Valor (R$)</label><input id="mvValor" type="number" inputmode="decimal" step="0.01"></div>
+    <div><label>Data</label><input id="mvData" type="date"></div>
+  </div>
+  <label>Descrição</label><input id="mvDesc">
+  <button class="btn" id="btnMv" onclick="salvarMov()">Salvar</button>
+  <button class="btn sec" style="color:var(--vermelho);" onclick="excluirMov()">Excluir lançamento</button>
+  <div class="msg" id="msgMv"></div>
+</div></div>
+
+<!-- Nova encomenda -->
+<div class="modal" id="modalEnc"><div class="folha">
+  <h3>Nova encomenda <button onclick="fecharModal()">×</button></h3>
+  <label>Cliente</label><input id="nCliente" autocomplete="off">
+  <label>WhatsApp (com DDD)</label><input id="nWhats" type="tel" inputmode="tel" placeholder="11999998888">
+  <label>Produto</label><input id="nProduto" list="dlReceitas" oninput="preencherReceita()" placeholder="escolha uma ficha técnica ou digite"><datalist id="dlReceitas"></datalist>
+  <div class="g2">
+    <div><label>Quantidade</label><input id="nQtd" type="number" inputmode="numeric" value="1" oninput="preencherReceita()"></div>
+    <div><label>Entrega</label><input id="nData" type="date"></div>
+  </div>
+  <div class="g2">
+    <div><label>Valor (R$)</label><input id="nValor" type="number" inputmode="decimal" step="0.01" oninput="this.dataset.manual=1;lucroNovo()"></div>
+    <div><label>Custo (R$)</label><input id="nCusto" type="number" inputmode="decimal" step="0.01" oninput="lucroNovo()"></div>
+  </div>
+  <div id="nLucro" class="lucro" style="margin-top:6px;font-size:14px;"></div>
+  <div class="g2">
+    <div><label>Sinal</label><select id="nSinal"><option>Não</option><option>Sim</option><option>Parcial</option></select></div>
+    <div><label>Valor do sinal</label><input id="nVSinal" type="number" inputmode="decimal" step="0.01"></div>
+  </div>
+  <label>Observações</label><textarea id="nObs" placeholder="sabor, decoração, tema..."></textarea>
+  <button class="btn" id="btnEnc" onclick="salvarEncomenda()">Salvar encomenda</button>
+  <div class="msg" id="msgEnc"></div>
+  <a class="btn zap oculto" id="zapEnc" target="_blank">📲 Confirmar com o cliente no WhatsApp</a>
+</div></div>
+
+<div class="carregando" id="carregando">Carregando...</div>
+<div class="carregando oculto" id="telaErro" style="flex-direction:column;padding:26px;text-align:center;line-height:1.55;overflow:auto;">
+  <div style="font-size:40px;">⚠️</div>
+  <b style="font-size:16px;color:#b3261e;">Não consegui falar com a planilha</b>
+  <div id="erroTexto" style="margin:8px 0 14px;font-size:13.5px;color:#444;"></div>
+  <button class="btn" onclick="carregar()">Tentar de novo</button>
+  <div id="erroUrl" style="font-size:11.5px;color:#666;word-break:break-all;background:#fff;border-radius:8px;padding:8px;margin-top:12px;text-align:left;"></div>
+  <div style="font-size:12.5px;color:#555;text-align:left;margin-top:12px;">
+    <b>Como achar a causa:</b><br>
+    1. Na planilha, abra 🍬 Loja → 🔗 URL do App da Web e cole a URL que aparece em Implantar → Gerenciar implantações (termina em <b>/exec</b>).<br>
+    2. Gere o link de novo (📱 Link do app no celular) e abra o link novo aqui.<br>
+    3. Se ainda falhar, copie o endereço de teste abaixo e abra numa <b>aba anônima</b>. Numa aba normal, com várias contas Google, sempre aparece o erro /u/0 ou /u/1, mesmo com tudo certo.<br>
+    • Se aparecer <b>{"ok":true ... "conectado"}</b>, a planilha está certa: me mande um print desta tela.<br>
+    • Se pedir login, o acesso não está como "Qualquer pessoa".<br>
+    • Se aparecer <b>"ação desconhecida"</b> ou <b>"token"</b>, falta implantar uma <i>Nova versão</i>.
+  </div>
+  <button class="btn sec" onclick="copiarTeste()">Copiar endereço de teste</button>
+  <div id="copiado" class="muted" style="margin-top:6px;"></div>
+</div>
+<div class="carregando oculto" id="semConfig" style="flex-direction:column;padding:30px;text-align:center;line-height:1.6;">
+  <div style="font-size:40px;">🔗</div>
+  <b style="font-size:16px;color:#6B4226;">Abra pelo link da planilha</b>
+  <div>Na planilha da loja, use 🍬 Loja → 📱 Link do app no celular e abra o link que ele mandar para o seu WhatsApp. Depois disso o app lembra a conexão.</div>
+</div>
+
+<script>
+// Conexão: vem no link da planilha (depois do #) e fica guardada neste celular.
+var CFG_KEY = 'loja_app_conexao';
+var CONEXAO = (function () {
+  var h = new URLSearchParams(location.hash.replace(/^#/, ''));
+  var c = null;
+  if (h.get('u') && h.get('k')) {
+    c = { url: h.get('u'), k: h.get('k') };
+    try { localStorage.setItem(CFG_KEY, JSON.stringify(c)); } catch (e) {}
+    history.replaceState(null, '', location.pathname);   // tira a chave da barra de endereço
+  } else {
+    try { c = JSON.parse(localStorage.getItem(CFG_KEY)); } catch (e) {}
+  }
+  return c && c.url && c.k ? c : null;
+})();
+var D = null;
+var FILA_KEY = 'loja_app_fila', CACHE_KEY = 'loja_app_dados';
+function lerFila() { try { return JSON.parse(localStorage.getItem(FILA_KEY)) || []; } catch (e) { return []; } }
+function gravarFila(f) { try { localStorage.setItem(FILA_KEY, JSON.stringify(f)); } catch (e) {} mostrarFila(); }
+
+function brl(v) { return (Number(v) || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+function $(id) { return document.getElementById(id); }
+function hojeISO() { var d = new Date(); return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10); }
+function dataBR(iso) { if (!iso) return 'sem data'; var p = iso.split('-'); return p[2] + '/' + p[1]; }
+function msg(id, texto, ok) { var m = $(id); m.textContent = texto; m.className = 'msg ' + (ok ? 'ok' : 'err'); }
+function linkZap(fone, texto) { return 'https://api.whatsapp.com/send?phone=55' + String(fone).replace(/^55/, '') + '&text=' + encodeURIComponent(texto); }
+
+function chamar(fn, args, ok, falha) {
+  falha = falha || function (x) { alert(x.message || x); };
+  var ctrl = window.AbortController ? new AbortController() : null;
+  var limite = setTimeout(function () { if (ctrl) ctrl.abort(); }, 45000);   // não fica carregando para sempre
+  fetch(CONEXAO.url, {
+    signal: ctrl ? ctrl.signal : undefined,
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },   // pedido simples: sem checagem prévia de CORS
+    body: JSON.stringify({ app: fn, k: CONEXAO.k, args: args || [] })
+  }).then(function (r) {
+      return r.text().then(function (t) {
+        try { return JSON.parse(t); }
+        catch (e) { throw new Error('A planilha respondeu uma página em vez de dados (geralmente login do Google ou código antigo). Veja os passos abaixo.'); }
+      });
+    })
+    .then(function (j) { clearTimeout(limite); if (j.ok) ok(j.v); else { var er = new Error(j.erro || 'erro na planilha'); er.servidor = true; throw er; } })
+    .catch(function (e) {
+      clearTimeout(limite);
+      if (e && e.servidor) { falha(e); return; }
+      var m = e && e.name === 'AbortError' ? 'A planilha demorou demais para responder.'
+        : navigator.onLine === false ? 'Sem internet no momento.'
+        : (e.message && e.message.indexOf('Failed to fetch') < 0 && e.message.indexOf('Load failed') < 0 ? e.message : 'O navegador foi bloqueado ao chamar a planilha (' + (e.message || e) + ').');
+      var erRede = new Error(m); erRede.rede = true;
+      falha(erRede);
+    });
+}
+
+// ── navegação ──
+var abaAtual = 'hoje';
+document.querySelectorAll('nav button').forEach(function (b) {
+  b.addEventListener('click', function () { irPara(b.getAttribute('data-aba')); });
+});
+function irPara(a) {
+  abaAtual = a;
+  document.querySelectorAll('nav button').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-aba') === a); });
+  document.querySelectorAll('.aba').forEach(function (s) { s.classList.toggle('ativa', s.id === 'aba-' + a); });
+  window.scrollTo(0, 0);
+  if (a === 'gestao') carregarGestao(false);
+}
+
+function carregar() {
+  if (!D) { try { var c = JSON.parse(localStorage.getItem(CACHE_KEY)); if (c && c.D) { D = c.D; render(); } } catch (x) {} }
+  if (!D) $('carregando').classList.remove('oculto');
+  $('telaErro').classList.add('oculto');
+  chamar('appDados', [], function (d) {
+    D = d; render(); $('carregando').classList.add('oculto');
+    try { localStorage.setItem(CACHE_KEY, JSON.stringify({ D: d })); } catch (x) {}
+    enviarFila();
+  }, function (e) {
+    $('carregando').classList.add('oculto');
+    if (D) { $('avisoSync').innerHTML = '<div class="alerta' + (e.rede ? '' : ' erro') + '">' + (e.rede ? '📴 Sem conexão: mostrando os dados de ' + esc(D.atualizado) + '. O que você lançar fica guardado e é enviado quando a internet voltar.' : esc(e.message || e)) + '</div>'; return; }   // já tinha dados: só avisa
+    $('erroTexto').textContent = e.message || e;
+    var u = CONEXAO.url, alerta = '';
+    if (/\/dev($|\?)/.test(u)) alerta = '⚠️ Este link usa a URL de teste (/dev), que só funciona logado. Configure a URL /exec na planilha e gere o link de novo.';
+    else if (/\/macros\/u\/\d+\//.test(u)) alerta = '⚠️ Este link tem /u/0/ ou /u/1/ no endereço. Configure a URL sem esse pedaço na planilha e gere o link de novo.';
+    else if (!/\/exec$/.test(u)) alerta = '⚠️ A URL deste link não termina em /exec.';
+    $('erroUrl').innerHTML = (alerta ? '<b style="color:#b3261e;">' + esc(alerta) + '</b><br><br>' : '') + 'Endereço que o app está chamando:<br>' + esc(u);
+    $('telaErro').classList.remove('oculto');
+  });
+}
+
+function render() {
+  $('tLoja').textContent = '🍬 ' + D.loja;
+  document.title = D.loja;
+  $('tAtual').textContent = 'Atualizado ' + D.atualizado;
+
+  // saúde da sincronização do PDV
+  var aviso = '';
+  if (!D.ultimaVenda) aviso = 'Nenhuma venda do PDV chegou na planilha ainda. Confira a conexão do PDV (aba Config).';
+  $('avisoSync').innerHTML = aviso ? '<div class="alerta">' + esc(aviso) + '</div>' : '';
+
+  $('hTotal').textContent = brl(D.hoje.total);
+  $('hN').textContent = D.hoje.n + ' venda(s) · lucro ' + brl(D.hoje.lucro);
+  if (D.caixa) {
+    $('hCaixa').textContent = D.caixa.aberto ? '🔓 Aberto' : '🔒 Fechado';
+    $('hCaixaS').textContent = D.caixa.aberto ? 'desde ' + D.caixa.abertura + ' · gaveta ' + brl(D.caixa.esperado)
+      : 'fechou ' + D.caixa.fechamento + (D.caixa.diferenca != null && Math.abs(D.caixa.diferenca) >= 0.01 ? ' · diferença ' + brl(D.caixa.diferenca) : ' · bateu');
+  } else { $('hCaixa').textContent = 'sem registro'; $('hCaixaS').textContent = ''; }
+  var pags = Object.keys(D.hoje.porPag);
+  $('hPag').innerHTML = '<div class="l">Por forma de pagamento (hoje)</div>' + (pags.length
+    ? pags.map(function (k) { return '<div class="linha"><span>' + esc(k) + '</span><b>' + brl(D.hoje.porPag[k]) + '</b></div>'; }).join('')
+    : '<div class="s" style="margin-top:6px;">Ainda sem vendas hoje' + (D.ultimaVenda ? ' · última venda recebida ' + esc(D.ultimaVenda) : '') + '</div>');
+
+  $('mBalcao').textContent = brl(D.mes.balcao) + ' (' + D.mes.nVendas + ')';
+  $('mEnc').innerHTML = brl(D.mes.encomendas) + (D.mes.encomendas ? ' <span class="lucro' + (D.mes.lucroEncomendas < 0 ? ' neg' : '') + '">lucro ' + brl(D.mes.lucroEncomendas) + '</span>' : '');
+  $('mDesp').textContent = brl(D.mes.despesas);
+  $('mCompras').textContent = brl(D.mes.compras);
+  $('mTicket').textContent = brl(D.mes.ticket);
+  $('mLucro').textContent = brl(D.mes.lucro);
+  $('mLucro').style.color = D.mes.lucro < 0 ? 'var(--vermelho)' : 'var(--verde)';
+
+  var abertas = D.encomendas.filter(function (e) { return ['Entregue', 'Cancelado'].indexOf(e.status) < 0; });
+  $('hEnc').innerHTML = abertas.length ? abertas.slice(0, 5).map(function (e) {
+    return '<div class="linha"><span><b>' + dataBR(e.data) + '</b> ' + esc(e.cliente) + '<br><span class="muted">' + esc(e.origem === 'Site' ? e.produto : e.qtd + 'x ' + e.produto) + '</span></span><span class="chip ' + esc(e.status.split(' ')[0]) + '">' + esc(e.status) + '</span></div>';
+  }).join('') : '<div class="vazio">Nenhuma encomenda em aberto.</div>';
+
+  $('nRepor').textContent = D.repor.length;
+  $('hRepor').innerHTML = D.repor.length ? D.repor.map(function (p) { return '<div class="linha"><span>' + esc(p.nome) + '</span><span class="muted">tem ' + p.estoque + ' · mín. ' + p.minimo + '</span></div>'; }).join('') : '<div class="vazio">Nada para repor 🎉</div>';
+  $('nVence').textContent = D.vencendo.length;
+  $('hVence').innerHTML = D.vencendo.length ? D.vencendo.map(function (p) { return '<div class="linha"><span>' + esc(p.nome) + '</span><span class="muted">vence ' + esc(p.validade) + ' · ' + p.estoque + ' un</span></div>'; }).join('') : '<div class="vazio">Nada vencendo 🎉</div>';
+
+  renderProducao();
+  renderRecompra();
+  if (!mesCustos || (D.movimentos && mesCustos.ano === D.movimentos.ano && mesCustos.mes === D.movimentos.mes)) MOV = D.movimentos;
+  renderCustos();
+  renderEncomendas();
+  renderExtrasEnc();
+  renderCompras();
+  renderLancar();
+}
+
+// ── encomendas ──
+var PROXIMO = { 'Encomendado': 'Pronto', 'Em produção': 'Pronto', 'Pronto': 'Entregue' };
+var diaProducao = 'hoje';
+function num(v) { return String(Math.round(v * 100) / 100).replace('.', ','); }
+function renderProducao() {
+  if (!D.producao) { $('cardProducao').classList.add('oculto'); return; }
+  $('prodHoje').classList.toggle('on', diaProducao === 'hoje'); $('prodAmanha').classList.toggle('on', diaProducao === 'amanha');
+  var P = D.producao[diaProducao], h = '';
+  if (!P.itens.length) h = '<div class="vazio">Nenhuma encomenda confirmada para ' + (diaProducao === 'hoje' ? 'hoje' : 'amanhã') + '.' + (P.aguardando ? '<br>' + P.aguardando + ' pedido(s) ainda sem sinal.' : '') + '</div>';
+  else {
+    h += P.itens.map(function (i) { return '<div class="linha"><span>' + esc(i.nome) + '</span><b>' + num(i.qtd) + ' ' + esc(i.unidade) + '</b></div>'; }).join('');
+    if (P.aguardando) h += '<div class="muted" style="margin-top:4px;">+ ' + P.aguardando + ' pedido(s) aguardando sinal (fora da conta).</div>';
+    if (P.ingredientes.length) {
+      var faltam = P.ingredientes.filter(function (g) { return g.falta > 0; });
+      h += '<div style="font-weight:700;font-size:13px;margin:12px 0 4px;color:var(--azul);">Ingredientes' + (faltam.length ? ' · <span style="color:var(--vermelho);">faltam ' + faltam.length + '</span>' : ' · tem tudo ✅') + '</div>' +
+        P.ingredientes.map(function (g) {
+          return '<div class="linha"><span>' + esc(g.nome) + '<br><span class="muted">precisa ' + num(g.precisa) + ' ' + esc(g.unidade) + ' · tem ' + num(g.tem) + (g.semCadastro ? ' (não está em INSUMOS)' : '') + '</span></span>' +
+            (g.falta > 0 ? '<b style="color:var(--vermelho);white-space:nowrap;">falta ' + num(g.falta) + '</b>' : '<span class="muted">ok</span>') + '</div>';
+        }).join('');
+    }
+    if (P.semFicha.length) h += '<div class="muted" style="margin-top:8px;">Sem ficha técnica (ingredientes não calculados): ' + esc(P.semFicha.join(', ')) + '.</div>';
+  }
+  if (P.pedidos.length) {
+    h += '<div style="font-weight:700;font-size:13px;margin:12px 0 4px;color:var(--azul);">' + (diaProducao === 'hoje' ? 'Retiradas e entregas de hoje' : 'Retiradas e entregas de amanhã') + '</div>' +
+      P.pedidos.map(function (o) {
+        var txt = 'Oi, ' + o.cliente + '! Passando para lembrar da sua encomenda ' + (diaProducao === 'hoje' ? 'hoje' : 'amanhã') + (o.horario ? ' às ' + o.horario : '') + ' (' + (o.modo === 'Entrega' ? 'entrega em ' + o.endereco : 'retirada em ' + D.enderecoRetirada) + ').' +
+          (o.saldo > 0 ? ' Valor restante: ' + brl(o.saldo) + (o.linkPedido ? ', dá para pagar pelo link: ' + o.linkPedido : D.chavePix ? ' (Pix: ' + D.chavePix + ')' : '') + '.' : '') + ' Até lá! 🎂';
+        return '<div class="linha" style="align-items:center;"><span><b>' + esc(o.horario || '--:--') + '</b> ' + esc(o.cliente) + '<br><span class="muted">' + esc(o.modo || 'Retirada') + (o.saldo > 0 ? ' · falta ' + brl(o.saldo) : ' · pago') + '</span></span>' +
+          (o.whats ? '<a class="mini zap" target="_blank" href="' + esc(linkZap(o.whats, txt)) + '">📲 Lembrar</a>' : '') + '</div>';
+      }).join('');
+  }
+  $('hProducao').innerHTML = h;
+}
+function renderRecompra() {
+  var L = D.recompras || [];
+  $('cardRecompra').classList.toggle('oculto', !L.length);
+  $('hRecompra').innerHTML = L.map(function (r) {
+    var txt = 'Oi, ' + r.cliente + '! Tudo bem? Há um ano você fez com a gente: ' + r.produto + ' 🎂 Se for comemorar de novo, já pode garantir a data pelo link: ' + (D.linkEncomendas || '') + ' 💛';
+    return '<div class="linha" style="align-items:center;"><span><b>' + esc(r.cliente) + '</b><br><span class="muted">' + esc(r.produto) + ' · ' + dataBR(r.data) + '/' + r.data.slice(0, 4) + (r.dias ? ' · daqui a ' + r.dias + ' dia(s)' : ' · hoje') + '</span></span>' +
+      '<a class="mini zap" target="_blank" href="' + esc(linkZap(r.whats, txt)) + '" onclick="marcarRecompra(\'' + r.id + '\')">📲 Mensagem</a></div>';
+  }).join('');
+}
+function marcarRecompra(id) {
+  D.recompras = D.recompras.filter(function (r) { return r.id !== id; });
+  setTimeout(renderRecompra, 300);
+  escrever('appMarcarRecompra', [id], 'Recompra avisada ' + id, function () {}, function () {});
+}
+function sitPagamento(e) {
+  var S = D.SIT || {};
+  if (e.situacao === S.PAGO) return '<span class="pg ok">✅ Pago</span>';
+  if (e.situacao === S.SINAL) return '<span class="pg ok">✅ Sinal pago · falta ' + brl(e.valor - e.valorSinal) + '</span>';
+  if (e.situacao === S.PIX_SINAL) return '<span class="pg conf">💰 Pix do sinal para conferir</span>';
+  if (e.situacao === S.PIX_SALDO) return '<span class="pg conf">💰 Pix do saldo para conferir</span>';
+  if (e.situacao === S.AGUARDANDO) return '<span class="pg esp">⏳ Aguardando sinal de ' + brl(e.valorSinal) + (e.forma ? ' (' + esc(e.forma) + ')' : '') + '</span>';
+  return '';
+}
+function conferirPix(id, caiu) {
+  if (!caiu && !confirm('Marcar que o Pix NÃO caiu? O pedido volta a esperar o pagamento.')) return;
+  chamar('appConferirPix', [id, caiu], function () { carregar(); }, function (e) { alert(e.message || e); });
+}
+function registrarPagamento(id, tipo) {
+  var e = D.encomendas.filter(function (x) { return x.id === id; })[0];
+  var v = tipo === 'sinal' ? (e.valorSinal || e.valor / 2) : e.valor - e.valorSinal;
+  if (!confirm('Confirmar que recebeu o ' + tipo + ' de ' + brl(v) + ' de ' + e.cliente + '?')) return;
+  chamar('appRegistrarPagamento', [id, tipo], function () { carregar(); }, function (er) { alert(er.message || er); });
+}
+function compartilharLinkEncomendas() {
+  if (!D || !D.linkEncomendas) { alert('Configure na planilha: 🍬 Loja → 🎂 Link de encomendas para clientes.'); return; }
+  var t = 'Faça sua encomenda aqui: ' + D.linkEncomendas;
+  if (navigator.share) navigator.share({ title: D.loja, text: t, url: D.linkEncomendas }).catch(function () {});
+  else window.open('https://api.whatsapp.com/send?text=' + encodeURIComponent(t), '_blank');
+}
+function enviarLinkPedido(id) {
+  var e = D.encomendas.filter(function (x) { return x.id === id; })[0];
+  window.open(linkZap(e.whats, 'Oi, ' + e.cliente + '! Acompanhe e pague sua encomenda ' + e.id + ' por aqui: ' + e.linkPedido), '_blank');
+}
+// ── datas fechadas, encomendas por produto e margem do cardápio ──
+function renderExtrasEnc() {
+  var DF = D.datasFechadas || [];
+  $('dfLista').innerHTML = DF.length ? DF.map(function (x) {
+    var rot = x.iso ? new Date(x.iso + 'T12:00:00').toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' }) : x.texto + ' (todo ano)';
+    return '<div class="linha"><span>🚫 ' + esc(rot) + (x.pedidos ? '<br><span class="muted" style="color:#8a5300;">' + x.pedidos + ' encomenda(s) já marcada(s) nesse dia</span>' : '') + '</span>' +
+      (x.iso ? '<button class="mini" onclick="abrirData(\'' + x.iso + '\')">Reabrir</button>' : '<span class="muted">pela planilha</span>') + '</div>';
+  }).join('') : '<div class="muted">Nenhuma data fechada.</div>';
+
+  var EP = D.encProdutos || [];
+  $('encProdutos').innerHTML = EP.length ? EP.map(function (x) {
+    return '<div class="linha"><span>' + esc(x.nome) + '<br><span class="muted">' + num(x.qtd) + ' ' + esc(x.unidade) + ' · ' + x.pedidos + ' pedido(s) · receita ' + brl(x.receita) + '</span></span>' +
+      '<b style="white-space:nowrap;' + (x.lucro < 0 ? 'color:var(--vermelho);' : 'color:var(--verde);') + '">' + (x.semCusto ? (x.custo ? brl(x.lucro) + ' *' : '<span class="muted" style="font-weight:500;">sem custo</span>') : brl(x.lucro)) + '</b></div>';
+  }).join('') + '<div class="muted" style="margin-top:6px;">Só encomendas entregues neste mês. Desconto já descontado da receita.' + (EP.some(function (x) { return x.semCusto && x.custo; }) ? ' * algum pedido desse produto está sem custo, então o lucro real é menor.' : '') + '</div>' : '<div class="vazio">Nenhuma encomenda entregue neste mês ainda.</div>';
+
+  var M = D.margens || [];
+  $('margens').innerHTML = M.length ? M.map(function (x) {
+    if (x.custo === null) return '<div class="linha"><span>' + esc(x.nome) + '<br><span class="muted">' + brl(x.preco) + '/' + esc(x.unidade) + ' · sem ficha técnica</span></span><span class="muted">?</span></div>';
+    var baixa = x.margem < 30, abaixo = x.preco < x.sugerido;
+    return '<div class="linha"><span>' + esc(x.nome) + '<br><span class="muted">vende ' + brl(x.preco) + ' · custo ' + brl(x.custo) + '/' + esc(x.unidade) +
+      (abaixo ? ' · <b style="color:#8a5300;">sugerido ' + brl(x.sugerido) + '</b>' : '') + '</span></span>' +
+      '<b style="white-space:nowrap;color:' + (x.margem < 0 ? 'var(--vermelho)' : baixa ? '#8a5300' : 'var(--verde)') + ';">' + Math.round(x.margem) + '%</b></div>';
+  }).join('') + '<div class="muted" style="margin-top:6px;">% = quanto do preço sobra depois do custo dos ingredientes. Sugerido = custo + ' + ((M[0] && M[0].markup) || 40) + '% (margem padrão da CONFIG). Itens com menos de 30% aparecem primeiro.</div>' : '<div class="vazio">Cardápio vazio.</div>';
+}
+function fecharData() {
+  var iso = $('dfData').value;
+  if (!iso) { $('dfMsg').textContent = 'Escolha a data.'; return; }
+  var ped = D.encomendas.filter(function (e) { return e.data === iso && e.status !== 'Cancelado'; }).length;
+  if (ped && !confirm('Já tem ' + ped + ' encomenda(s) para esse dia. Elas continuam valendo; só novos pedidos ficam bloqueados. Fechar mesmo assim?')) return;
+  $('dfMsg').textContent = 'Fechando...';
+  chamar('appDatasFechadas', ['fechar', iso], function (l) { D.datasFechadas = l; $('dfData').value = ''; $('dfMsg').textContent = '✅ Data fechada na página de encomendas.'; renderExtrasEnc(); },
+    function (e) { $('dfMsg').textContent = e.message || e; });
+}
+function abrirData(iso) {
+  chamar('appDatasFechadas', ['abrir', iso], function (l) { D.datasFechadas = l; $('dfMsg').textContent = '✅ Data reaberta.'; renderExtrasEnc(); },
+    function (e) { $('dfMsg').textContent = e.message || e; });
+}
+
+function renderEncomendas() {
+  var S = D.SIT || {};
+  var conf = D.encomendas.filter(function (e) { return e.situacao === S.PIX_SINAL || e.situacao === S.PIX_SALDO; });
+  $('pixConferir').innerHTML = conf.length ? '<div class="card" style="border:2px solid #C8A98F;margin-top:12px;"><h2>💰 Pix para conferir <span class="chip">' + conf.length + '</span></h2>' +
+    conf.map(function (e) {
+      var sinal = e.situacao === S.PIX_SINAL, v = sinal ? e.valorSinal : e.valor - e.valorSinal;
+      return '<div class="linha" style="flex-wrap:wrap;"><span><b>' + esc(e.cliente) + '</b> · ' + (sinal ? 'sinal' : 'saldo') + ' <b>' + brl(v) + '</b><br><span class="muted">' + esc(e.id) + ' · ' + dataBR(e.data) + '</span>' + (e.comprovante ? '<br><a class="mini" style="margin-top:4px;" target="_blank" href="' + esc(e.comprovante) + '">📎 Ver comprovante</a>' : '') + '</span>' +
+        '<span style="display:flex;gap:6px;"><button class="mini" style="background:#e8f5e9;color:var(--verde);" onclick="conferirPix(\'' + e.id + '\',true)">Caiu</button><button class="mini" style="color:var(--vermelho);" onclick="conferirPix(\'' + e.id + '\',false)">Não caiu</button></span></div>';
+    }).join('') + '<div class="muted" style="margin-top:6px;">Confira no app do banco antes de marcar.</div></div>' : '';
+  var lista = D.encomendas, html = '', diaAtual = null;
+  if (!lista.length) { $('listaEnc').innerHTML = '<div class="vazio" style="margin-top:20px;">Nenhuma encomenda. Toque em + Nova encomenda.</div>'; return; }
+  lista.forEach(function (e) {
+    var dia = e.data || '';
+    if (dia !== diaAtual) {
+      diaAtual = dia;
+      var rot = !dia ? 'Sem data' : (dia === hojeISO() ? 'Hoje · ' + dataBR(dia) : dataBR(dia) + ' · ' + new Date(dia + 'T12:00:00').toLocaleDateString('pt-BR', { weekday: 'long' }));
+      html += '<div class="dia">' + esc(rot) + '</div>';
+    }
+    var prox = PROXIMO[e.status];
+    var acoes = '';
+    if (!e.situacao || e.situacao === S.AGUARDANDO) { if (['Entregue', 'Cancelado'].indexOf(e.status) < 0) acoes += '<button class="mini" onclick="registrarPagamento(\'' + e.id + '\',\'sinal\')">💵 Recebi o sinal</button>'; }
+    else if (e.situacao === S.SINAL) acoes += '<button class="mini" onclick="registrarPagamento(\'' + e.id + '\',\'saldo\')">💵 Recebi o saldo</button>';
+    if (e.linkPedido && e.whats) acoes += '<button class="mini" onclick="enviarLinkPedido(\'' + e.id + '\')">🔗 Link do pedido</button>';
+    if (prox) acoes += '<button class="mini" onclick="mudarStatus(\'' + e.id + '\',\'' + prox + '\')">→ ' + prox + '</button>';
+    if (e.whats && e.status === 'Pronto') acoes += '<a class="mini zap" target="_blank" href="' + esc(linkZap(e.whats, 'Oi, ' + e.cliente + '! Sua encomenda (' + (e.origem === 'Site' ? e.produto : e.qtd + 'x ' + e.produto) + ') está pronta. 🎂' + (e.situacao !== (D.SIT || {}).PAGO && e.valor - e.valorSinal > 0 ? ' Valor a pagar na ' + (e.modo === 'Entrega' ? 'entrega' : 'retirada') + ': ' + brl(e.valor - e.valorSinal) + '.' + (e.linkPedido ? ' Pode pagar por aqui: ' + e.linkPedido : '') : '') + (D.chavePix ? ' Pix: ' + D.chavePix : ''))) + '">📲 Avisar que está pronta</a>';
+    else if (e.whats && e.status === 'Entregue' && D.avaliacao) acoes += '<a class="mini zap" target="_blank" href="' + esc(linkZap(e.whats, 'Oi, ' + e.cliente + '! Obrigado pela encomenda 💛 Se puder, deixa sua avaliação pra gente no Google, ajuda muito: ' + D.avaliacao)) + '">⭐ Pedir avaliação</a>';
+    else if (e.whats) acoes += '<a class="mini zap" target="_blank" href="' + esc(linkZap(e.whats, 'Oi, ' + e.cliente + '! ')) + '">📲 WhatsApp</a>';
+    if (['Entregue', 'Cancelado'].indexOf(e.status) < 0) acoes += '<button class="mini" style="color:var(--vermelho);" onclick="mudarStatus(\'' + e.id + '\',\'Cancelado\')">Cancelar</button>';
+    var falta = e.valor - e.valorSinal;
+    var lucroE = e.custo ? '<span class="lucro' + (e.valor - e.custo < 0 ? ' neg' : '') + '">lucro ' + brl(e.valor - e.custo) + '</span>' : '<span class="muted">custo não informado</span>';
+    html += '<div class="card enc"><div class="topo clicavel" onclick="abrirEdicao(\'' + e.id + '\')"><div><div class="nome">' + esc(e.cliente) + ' <span class="muted" style="font-weight:500;">✏️</span></div><div class="prod">' + esc(e.origem === 'Site' ? e.produto : e.qtd + 'x ' + e.produto) + '</div></div>' +
+      '<span class="chip ' + esc(e.status.split(' ')[0]) + '">' + esc(e.status) + '</span></div>' +
+      (e.horario || e.modo ? '<div class="muted" style="margin-top:4px;">🕐 ' + esc(e.horario || '') + (e.modo ? ' · ' + esc(e.modo) : '') + (e.endereco ? ' · ' + esc(e.endereco) : '') + (e.origem === 'Site' ? ' · 🌐 site' : '') + '</div>' : '') +
+      (e.itens ? '<div class="muted" style="margin-top:4px;white-space:pre-line;color:#444;">' + esc(e.itens) + '</div>' : '') +
+      '<div class="muted" style="margin-top:6px;">' + lucroE + ' · Total ' + brl(e.valor) + (e.desconto ? ' (desconto ' + brl(e.desconto) + ')' : '') + (e.situacao ? '' : (e.sinal && e.sinal !== 'Não' ? ' · sinal ' + esc(e.sinal.toLowerCase()) + (e.valorSinal ? ' ' + brl(e.valorSinal) : '') : ' · sem sinal') + (falta > 0 && e.status !== 'Entregue' ? ' · falta ' + brl(falta) : '')) + '</div>' +
+      sitPagamento(e) +
+      (e.obs ? '<div class="muted" style="margin-top:4px;">📝 ' + esc(e.obs) + '</div>' : '') +
+      (e.foto ? '<a class="mini" style="margin-top:6px;" target="_blank" href="' + esc(e.foto) + '">📷 Foto de referência</a>' : '') +
+      (acoes ? '<div class="acoes">' + acoes + '</div>' : '') + '</div>';
+  });
+  $('listaEnc').innerHTML = html;
+}
+
+function mudarStatus(id, status) {
+  if (status === 'Cancelado' && !confirm('Cancelar esta encomenda?')) return;
+  var e = D.encomendas.filter(function (x) { return x.id === id; })[0];
+  var antigo = e.status; e.status = status; render();
+  escrever('appStatusEncomenda', [id, status], e.id + ' ' + e.cliente + ' → ' + status, function () {}, function (err) { e.status = antigo; render(); alert(err.message || err); });
+}
+
+// ── envio com fila: sem internet, guarda no celular e envia depois ──
+function escrever(fn, args, rotulo, ok, falha) {
+  var guardar = function () {
+    var f = lerFila(); f.push({ fn: fn, args: args, rotulo: rotulo, em: new Date().toLocaleString('pt-BR') }); gravarFila(f);
+    ok({ offline: true });
+  };
+  if (navigator.onLine === false) { guardar(); return; }
+  chamar(fn, args, function (v) { ok(v); enviarFila(); }, function (e) { if (e.rede) guardar(); else falha(e); });
+}
+var enviando = false;
+function enviarFila() {
+  var f = lerFila();
+  if (enviando || !f.length || !CONEXAO) { mostrarFila(); return; }
+  enviando = true;
+  var item = f[0];
+  chamar(item.fn, item.args, function () {
+    enviando = false; gravarFila(lerFila().slice(1)); if (lerFila().length) enviarFila(); else carregar();
+  }, function (e) {
+    enviando = false;
+    if (e.rede) { mostrarFila(); return; }   // continua sem conexão: tenta depois
+    var resto = lerFila().slice(1); gravarFila(resto);
+    alert('Não foi possível registrar "' + item.rotulo + '": ' + (e.message || e));
+    if (resto.length) enviarFila();
+  });
+}
+function mostrarFila() {
+  var f = lerFila(), html = f.length ? '<div class="fila">⏳ <b>' + f.length + ' lançamento(s) esperando internet</b>' +
+    f.map(function (x) { return '<div class="muted" style="color:#4E342E;">• ' + esc(x.rotulo) + ' <span style="opacity:.7;">(' + esc(x.em) + ')</span></div>'; }).join('') + '</div>' : '';
+  ['filaHoje', 'filaLancar'].forEach(function (id) { if ($(id)) $(id).innerHTML = html; });
+}
+window.addEventListener('online', function () { enviarFila(); });
+setInterval(function () { if (lerFila().length) enviarFila(); }, 60000);
+function idLocal(p) { return p + Date.now().toString(36).toUpperCase() + Math.random().toString(36).slice(2, 5).toUpperCase(); }
+
+function copiarTeste() {
+  var t = CONEXAO.url + '?app=ping&k=' + encodeURIComponent(CONEXAO.k);
+  var ok = function () { $('copiado').textContent = 'Copiado. Cole numa aba anônima.'; };
+  if (navigator.clipboard) navigator.clipboard.writeText(t).then(ok, function () { prompt('Copie o endereço:', t); });
+  else prompt('Copie o endereço:', t);
+}
+function abrirNovaEncomenda() {
+  if (!D) { carregar(); return; }
+  ['nCliente', 'nWhats', 'nProduto', 'nValor', 'nCusto', 'nVSinal', 'nObs', 'nData'].forEach(function (i) { $(i).value = ''; });
+  $('nValor').dataset.manual = ''; $('nQtd').value = 1; $('nSinal').value = 'Não';
+  $('nLucro').textContent = '';
+  $('msgEnc').className = 'msg'; $('zapEnc').classList.add('oculto'); $('btnEnc').disabled = false; $('btnEnc').classList.remove('oculto');
+  $('dlReceitas').innerHTML = D.receitas.map(function (r) { return '<option value="' + esc(r.nome) + '">'; }).join('');
+  $('modalEnc').classList.add('aberto');
+}
+function fecharModal() { $('modalEnc').classList.remove('aberto'); }
+function fecharModais() { ['modalEnc', 'modalEdit', 'modalMov', 'modalG'].forEach(function (m) { $(m).classList.remove('aberto'); }); }
+function lucroTexto(v, c) {
+  v = Number(v) || 0; c = Number(c) || 0;
+  if (!v) return '';
+  return c ? 'Lucro estimado: ' + brl(v - c) + ' (' + Math.round((v - c) / v * 100) + '% do valor)' : 'Preencha o custo para ver o lucro.';
+}
+function lucroNovo() { $('nLucro').textContent = lucroTexto($('nValor').value, $('nCusto').value); $('nLucro').classList.toggle('neg', Number($('nValor').value) < Number($('nCusto').value)); }
+function lucroEd() { $('edLucro').textContent = lucroTexto($('edValor').value, $('edCusto').value); $('edLucro').classList.toggle('neg', Number($('edValor').value) < Number($('edCusto').value)); }
+
+// ── abrir e editar uma encomenda (qualquer status, inclusive voltar) ──
+var edId = null;
+function abrirEdicao(id) {
+  var e = D.encomendas.filter(function (x) { return x.id === id; })[0];
+  if (!e) return;
+  edId = id;
+  $('edTitulo').textContent = 'Encomenda ' + e.id;
+  $('edInfo').textContent = (e.itens ? e.itens + '\n' : '') + (e.origem === 'Site' ? '🌐 Pedido feito pelo site' : '') + (e.forma ? ' · sinal por ' + e.forma : '');
+  $('edStatus').innerHTML = (D.statusEnc || ['Aguardando sinal', 'Encomendado', 'Em produção', 'Pronto', 'Entregue', 'Cancelado']).map(function (st) { return '<option' + (st === e.status ? ' selected' : '') + '>' + esc(st) + '</option>'; }).join('');
+  $('edCliente').value = e.cliente; $('edWhats').value = e.whats; $('edProduto').value = e.produto; $('edQtd').value = e.qtd;
+  $('edData').value = e.data || ''; $('edHorario').value = /^\d{1,2}:\d{2}$/.test(e.horario) ? (e.horario.length === 4 ? '0' + e.horario : e.horario) : '';
+  $('edSinal').value = e.valorSinal || ''; $('edValor').value = e.valor || ''; $('edCusto').value = e.custo || ''; $('edObs').value = e.obs || '';
+  $('msgEd').className = 'msg'; $('btnEd').disabled = false;
+  lucroEd();
+  $('modalEdit').classList.add('aberto');
+}
+function salvarEdicao() {
+  var d = { status: $('edStatus').value, cliente: $('edCliente').value.trim(), whats: $('edWhats').value, produto: $('edProduto').value.trim(), qtd: $('edQtd').value,
+    data: $('edData').value, horario: $('edHorario').value, valorSinal: $('edSinal').value || 0, valor: $('edValor').value || 0, custo: $('edCusto').value || 0, obs: $('edObs').value };
+  if (!d.cliente || !d.produto) { msg('msgEd', 'Preencha cliente e produto.', false); return; }
+  $('btnEd').disabled = true;
+  chamar('appEditarEncomenda', [edId, d], function () { msg('msgEd', 'Salvo!', true); setTimeout(fecharModais, 500); carregar(); },
+    function (e) { $('btnEd').disabled = false; msg('msgEd', e.message || e, false); });
+}
+
+// ── lançamentos do mês (custos): ver, corrigir e excluir ──
+var mesCustos = null, MOV = null, movAtual = null;
+var NOMES_MES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+function abrirCustos() { irPara('lancar'); segmento('desp'); setTimeout(function () { $('cardCustos').scrollIntoView({ behavior: 'smooth' }); }, 50); }
+function renderCustos() {
+  if (!MOV) MOV = D.movimentos;
+  if (!mesCustos && MOV) mesCustos = { ano: MOV.ano, mes: MOV.mes };
+  if (!MOV) return;
+  $('custosMes').textContent = NOMES_MES[MOV.mes - 1] + ' de ' + MOV.ano;
+  var desp = MOV.itens.filter(function (x) { return x.tipo === 'Despesa'; }), rec = MOV.itens.filter(function (x) { return x.tipo === 'Receita'; });
+  var porCat = {};
+  desp.forEach(function (x) { porCat[x.cat] = (porCat[x.cat] || 0) + x.valor; });
+  $('custosResumo').innerHTML = MOV.itens.length ? 'Despesas ' + brl(desp.reduce(function (s, x) { return s + x.valor; }, 0)) + (rec.length ? ' · receitas ' + brl(rec.reduce(function (s, x) { return s + x.valor; }, 0)) : '') + '<br>' +
+    Object.keys(porCat).sort(function (a, b) { return porCat[b] - porCat[a]; }).map(function (c) { return esc(c) + ' ' + brl(porCat[c]); }).join(' · ') : '';
+  $('listaCustos').innerHTML = MOV.itens.length ? MOV.itens.map(function (x, i) {
+    return '<div class="linha clicavel" onclick="abrirMov(' + i + ')"><span>' + esc(x.desc || x.cat) + '<br><span class="muted">' + dataBR(x.data) + ' · ' + esc(x.cat) + (x.tipo === 'Receita' ? ' · receita' : '') + '</span></span><b style="white-space:nowrap;' + (x.tipo === 'Receita' ? 'color:var(--verde);' : '') + '">' + (x.tipo === 'Receita' ? '+' : '') + brl(x.valor) + '</b></div>';
+  }).join('') : '<div class="vazio">Nenhum lançamento neste mês.</div>';
+}
+function mudarMes(dir) {
+  var m = mesCustos.mes + dir, a = mesCustos.ano;
+  if (m < 1) { m = 12; a--; } if (m > 12) { m = 1; a++; }
+  mesCustos = { ano: a, mes: m };
+  $('listaCustos').innerHTML = '<div class="vazio">Carregando...</div>';
+  chamar('appMovimentos', [a, m], function (r) { MOV = r; renderCustos(); }, function (e) { $('listaCustos').innerHTML = '<div class="vazio">' + esc(e.message || e) + '</div>'; });
+}
+function abrirMov(i) {
+  movAtual = MOV.itens[i];
+  var cats = Array.prototype.map.call($('dCat').options, function (o) { return o.value; });
+  if (cats.indexOf(movAtual.cat) < 0) cats.push(movAtual.cat);
+  $('mvCat').innerHTML = cats.map(function (c) { return '<option' + (c === movAtual.cat ? ' selected' : '') + '>' + esc(c) + '</option>'; }).join('');
+  $('mvTipo').value = movAtual.tipo || 'Despesa'; $('mvValor').value = movAtual.valor; $('mvData').value = movAtual.data; $('mvDesc').value = movAtual.desc;
+  $('msgMv').className = 'msg'; $('btnMv').disabled = false;
+  $('modalMov').classList.add('aberto');
+}
+function recarregarMes() { chamar('appMovimentos', [mesCustos.ano, mesCustos.mes], function (r) { MOV = r; renderCustos(); }, function () {}); }
+function salvarMov() {
+  var d = { tipo: $('mvTipo').value, cat: $('mvCat').value, valor: $('mvValor').value, data: $('mvData').value, desc: $('mvDesc').value.trim() };
+  if (!(Number(d.valor) > 0)) { msg('msgMv', 'Informe o valor.', false); return; }
+  $('btnMv').disabled = true;
+  chamar('appEditarMovimento', [movAtual.linha, movAtual.chave, d], function () { msg('msgMv', 'Salvo!', true); setTimeout(fecharModais, 400); recarregarMes(); carregar(); },
+    function (e) { $('btnMv').disabled = false; msg('msgMv', e.message || e, false); });
+}
+function excluirMov() {
+  if (!confirm('Excluir este lançamento de ' + brl(movAtual.valor) + '?')) return;
+  chamar('appExcluirMovimento', [movAtual.linha, movAtual.chave], function () { fecharModais(); recarregarMes(); carregar(); }, function (e) { msg('msgMv', e.message || e, false); });
+}
+function preencherReceita() {
+  var r = D.receitas.filter(function (x) { return x.nome === $('nProduto').value; })[0];
+  if (!r) return;
+  var q = Number($('nQtd').value) || 1;
+  $('nCusto').value = (r.custo * q).toFixed(2);
+  if (!$('nValor').dataset.manual && r.preco) $('nValor').value = (r.preco * q).toFixed(2);
+  lucroNovo();
+}
+function salvarEncomenda() {
+  var d = { cliente: $('nCliente').value.trim(), whats: $('nWhats').value, produto: $('nProduto').value.trim(), qtd: $('nQtd').value, data: $('nData').value,
+    valor: $('nValor').value, custo: $('nCusto').value, sinal: $('nSinal').value, vsinal: $('nVSinal').value, obs: $('nObs').value.trim() };
+  if (!d.cliente || !d.produto) { msg('msgEnc', 'Preencha cliente e produto.', false); return; }
+  $('btnEnc').disabled = true;
+  chamar('appSalvarEncomenda', [d], function (r) {
+    msg('msgEnc', 'Encomenda ' + r.id + ' salva!', true);
+    $('btnEnc').classList.add('oculto');
+    if (r.link) { $('zapEnc').href = r.link; $('zapEnc').classList.remove('oculto'); }
+    carregar();
+  }, function (e) { $('btnEnc').disabled = false; msg('msgEnc', e.message || e, false); });
+}
+
+// ── compras ──
+function renderCompras() {
+  if (!D.compras.length) { $('listaCompras').innerHTML = '<div class="vazio" style="margin-top:20px;">Nada para comprar agora. 🎉</div>'; return; }
+  $('listaCompras').innerHTML = D.compras.map(function (g) {
+    return '<div class="card"><h2><span>🚚 ' + esc(g.fornecedor) + '</span><span class="chip">' + brl(g.total) + '</span></h2>' +
+      (g.abaixoMinimo ? '<div class="alerta" style="margin-bottom:6px;">Abaixo do pedido mínimo de ' + brl(g.pedidoMinimo) + '</div>' : '') +
+      g.itens.map(function (i) {
+        return '<div class="linha"><span>' + esc(i.nome) + '<br><span class="muted">tem ' + i.estoque + (i.cobertura !== '' ? ' · dura ' + i.cobertura + ' dia(s)' : ' · sem venda recente') + '</span></span><b style="white-space:nowrap;">' +
+          (i.caixas ? i.caixas + ' cx' : i.unidades + ' un') + '</b></div>';
+      }).join('') +
+      (g.link ? '<a class="btn zap" target="_blank" href="' + esc(g.link) + '">📲 Enviar pedido no WhatsApp</a>'
+        : '<div class="muted" style="margin-top:8px;">' + (g.fornecedor.indexOf('Sem') === 0 ? 'Defina o fornecedor no cadastro do produto (PDV).' : 'Cadastre o WhatsApp deste atacadista na aba 🚚 FORNECEDORES da planilha.') + '</div>') +
+      '</div>';
+  }).join('');
+}
+
+// ── lançar ──
+function segmento(s) {
+  $('segDesp').classList.toggle('on', s === 'desp'); $('segEnt').classList.toggle('on', s === 'ent');
+  $('formDesp').classList.toggle('oculto', s !== 'desp'); $('formEnt').classList.toggle('oculto', s !== 'ent');
+}
+function renderLancar() {
+  if (!$('dData').value) $('dData').value = hojeISO();
+  var sel = $('eProduto'), atual = sel.value;
+  sel.innerHTML = '<option value="">Escolha o produto</option>' + D.produtos.map(function (p) {
+    return '<option value="' + esc(p.codigo) + '">' + esc(p.nome) + ' (tem ' + p.estoque + ')</option>';
+  }).join('');
+  sel.value = atual;
+  ajustarEntrada();
+  $('listaEntradas').innerHTML = D.entradas.length ? '<div class="muted" style="font-weight:700;margin-bottom:4px;">Aguardando o PDV (' + D.entradas.length + ')</div>' +
+    D.entradas.map(function (x) { return '<div class="linha"><span>' + esc(x.nome) + '</span><span class="muted">+' + x.unidades + ' un · ' + esc(x.registrada) + '</span></div>'; }).join('') : '';
+}
+function produtoEntrada() { var c = $('eProduto').value; return D.produtos.filter(function (p) { return p.codigo === c; })[0]; }
+function ajustarEntrada() {
+  var p = produtoEntrada();
+  var temCaixa = p && p.unidadesCaixa > 0;
+  $('eCaixaBox').classList.toggle('oculto', !temCaixa);
+  var emCaixas = temCaixa && $('eEmCaixas').value === '1';
+  $('eQtdLabel').textContent = emCaixas ? 'Caixas (' + p.unidadesCaixa + ' un cada)' : 'Unidades';
+  if (p && !$('eCusto').value && p.custo) $('eCusto').value = p.custo;
+  var q = parseInt($('eQtd').value, 10) || 0, un = q * (emCaixas ? p.unidadesCaixa : 1), c = Number($('eCusto').value) || 0;
+  $('eResumo').textContent = p && q ? 'Entram ' + un + ' unidades' + (c ? ' · total ' + brl(un * c) : '') : '';
+}
+function darEntrada() {
+  if (!D) { carregar(); return; }
+  var p = produtoEntrada();
+  if (!p) { msg('msgEnt', 'Escolha o produto.', false); return; }
+  if (!(parseInt($('eQtd').value, 10) > 0)) { msg('msgEnt', 'Informe a quantidade.', false); return; }
+  var emCx = p.unidadesCaixa > 0 && $('eEmCaixas').value === '1';
+  var dados = { codigo: p.codigo, qtd: $('eQtd').value, emCaixas: emCx, custo: $('eCusto').value, validade: $('eValidade').value, lancarDespesa: $('eLancar').checked, idLocal: idLocal('ENT') };
+  $('btnEnt').disabled = true;
+  escrever('appEntradaMercadoria', [dados], 'Entrada: ' + dados.qtd + (emCx ? ' cx ' : ' un ') + p.nome,
+    function (m) {
+      $('btnEnt').disabled = false; $('eQtd').value = ''; $('eValidade').value = ''; $('eCusto').value = '';
+      if (m && m.offline) msg('msgEnt', '📴 Sem internet: entrada guardada no celular. Será enviada sozinha quando a conexão voltar.', true);
+      else { msg('msgEnt', m, true); carregar(); }
+    },
+    function (e) { $('btnEnt').disabled = false; msg('msgEnt', e.message || e, false); });
+}
+function lancarDespesa() {
+  if (!D) { carregar(); return; }
+  var d = { tipo: $('dTipo').value, cat: $('dCat').value, valor: $('dValor').value, data: $('dData').value, desc: $('dDesc').value.trim() };
+  if (!(Number(d.valor) > 0)) { msg('msgDesp', 'Informe o valor.', false); return; }
+  d.idLocal = idLocal('D');
+  $('btnDesp').disabled = true;
+  escrever('appLancarDespesa', [d], d.tipo + ' ' + brl(d.valor) + ' · ' + d.cat + (d.desc ? ' (' + d.desc + ')' : ''), function (r) {
+    $('btnDesp').disabled = false; $('dValor').value = ''; $('dDesc').value = '';
+    if (r && r.offline) msg('msgDesp', '📴 Sem internet: ' + d.tipo.toLowerCase() + ' de ' + brl(d.valor) + ' guardada no celular. Será enviada sozinha quando a conexão voltar.', true);
+    else { msg('msgDesp', d.tipo + ' de ' + brl(d.valor) + ' lançada.', true); carregar(); }
+  }, function (e) { $('btnDesp').disabled = false; msg('msgDesp', e.message || e, false); });
+}
+
+// ============================================================
+// GESTÃO (cardápio, fichas, ingredientes, balcão e ajustes)
+// ============================================================
+var G = null, gSeg = 'cardapio', G_KEY = 'loja_app_gestao', gCarregou = false;
+function carregarGestao(forcar) {
+  if (!G) { try { var c = JSON.parse(localStorage.getItem(G_KEY)); if (c) G = c; } catch (x) {} }
+  if (G) renderGestao();
+  else $('gConteudo').innerHTML = '<div class="vazio">Carregando...</div>';
+  if (G && !forcar && gCarregou) return;
+  chamar('appGestao', [], function (g) {
+    G = g; gCarregou = true;
+    try { localStorage.setItem(G_KEY, JSON.stringify(g)); } catch (x) {}
+    renderGestao();
+  }, function (e) {
+    if (!G) $('gConteudo').innerHTML = '<div class="alerta erro">' + esc(e.message || e) + '</div>';
+    else $('gAviso').innerHTML = '<div class="alerta">' + (e.rede ? '📴 Sem conexão: mostrando os últimos dados. Para salvar mudanças é preciso internet.' : esc(e.message || e)) + '</div>';
+  });
+}
+function avisoG(t) { $('gAviso').innerHTML = '<div class="msg ok" style="display:block;margin-bottom:10px;">✅ ' + esc(t) + '</div>'; clearTimeout(avisoG.t); avisoG.t = setTimeout(function () { $('gAviso').innerHTML = ''; }, 4000); window.scrollTo(0, 0); }
+function segG(s) { gSeg = s; renderGestao(); window.scrollTo(0, 0); }
+function renderGestao() {
+  document.querySelectorAll('#segG button').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-s') === gSeg); });
+  if (!G) return;
+  $('dlInsumos').innerHTML = G.insumos.map(function (x) { return '<option value="' + esc(x.nome) + '">'; }).join('');
+  var f = { cardapio: gCardapio, fichas: gFichas, ingredientes: gIngredientes, balcao: gBalcao, ajustes: gAjustes }[gSeg];
+  $('gConteudo').innerHTML = f();
+}
+function opt(lista, atual) { return lista.map(function (o) { var v = typeof o === 'object' ? o.v : o, t = typeof o === 'object' ? o.t : o; return '<option value="' + esc(v) + '"' + (String(v) === String(atual) ? ' selected' : '') + '>' + esc(t) + '</option>'; }).join(''); }
+
+// ── formulário genérico (folha que sobe de baixo) ──
+var gForm = null;
+function abrirForm(titulo, campos, onSalvar, extras) {
+  gForm = { campos: campos, onSalvar: onSalvar, extras: extras || [] };
+  $('gTitulo').textContent = titulo;
+  $('gCorpo').innerHTML = campos.map(function (c) {
+    if (c.tipo === 'html') return c.html;
+    if (c.tipo === 'titulo') return '<div style="font-weight:800;color:var(--azul);margin:16px 0 2px;">' + esc(c.label) + '</div>';
+    var id = 'gf_' + c.id, v = c.valor === null || c.valor === undefined ? '' : c.valor;
+    if (c.tipo === 'check') return '<label style="display:flex;gap:8px;align-items:center;font-weight:500;"><input type="checkbox" id="' + id + '" style="width:auto;"' + (v ? ' checked' : '') + '> ' + esc(c.label) + '</label>';
+    var campo = c.tipo === 'select' ? '<select id="' + id + '"' + (c.onchange ? ' onchange="' + c.onchange + '"' : '') + '>' + opt(c.opcoes, v) + '</select>'
+      : c.tipo === 'textarea' ? '<textarea id="' + id + '">' + esc(v) + '</textarea>'
+      : '<input id="' + id + '" type="' + (c.tipo || 'text') + '"' + (c.tipo === 'number' ? ' inputmode="decimal" step="any"' : '') + (c.lista ? ' list="' + c.lista + '"' : '') + ' value="' + esc(v) + '"' + (c.placeholder ? ' placeholder="' + esc(c.placeholder) + '"' : '') + '>';
+    var bloco = '<label>' + esc(c.label) + '</label>' + campo + (c.ajuda !== undefined ? '<div class="muted" id="' + id + '_ajuda" style="margin-top:3px;">' + esc(c.ajuda) + '</div>' : '');
+    return c.so ? '<div data-so="' + esc(c.so.join('|')) + '">' + bloco + '</div>' : bloco;
+  }).join('') +
+    '<button class="btn" id="gSalvar" onclick="salvarForm()">' + (gForm.extras.textoSalvar || 'Salvar') + '</button>' +
+    gForm.extras.map(function (x, i) { return '<button class="btn sec" style="' + (x.perigo ? 'color:var(--vermelho);' : '') + '" onclick="gForm.extras[' + i + '].acao()">' + esc(x.texto) + '</button>'; }).join('');
+  $('gMsg').className = 'msg';
+  $('modalG').classList.add('aberto');
+}
+function valoresForm() {
+  var v = {};
+  gForm.campos.forEach(function (c) { var el = $('gf_' + c.id); if (!el) return; v[c.id] = c.tipo === 'check' ? el.checked : el.value; });
+  return v;
+}
+function salvarForm() {
+  var b = $('gSalvar'); b.disabled = true;
+  gForm.onSalvar(valoresForm(), function (ok, m) {
+    b.disabled = false;
+    msg('gMsg', m || (ok ? 'Salvo!' : 'Erro'), ok);
+    if (ok) { setTimeout(fecharModais, 600); carregarGestao(true); }
+  });
+}
+function gChamar(fn, args, pronto) {
+  chamar(fn, args, function (r) { pronto(true, typeof r === 'string' ? r : 'Salvo!'); }, function (e) { pronto(false, e.message || e); });
+}
+
+// ── CARDÁPIO ──
+function gruposCardapio() {
+  var grupos = {}, ordem = [];
+  G.cardapio.forEach(function (c) { var g = c.grupo || c.categoria || 'Outros'; if (!grupos[g]) { grupos[g] = []; ordem.push(g); } grupos[g].push(c); });
+  var ol = G.ordemCategorias || [], pos = function (g) { if (/^Monte seu bolo/.test(g)) return 5000 + ordem.indexOf(g); var i = ol.indexOf(g); return i < 0 ? 1000 + ordem.indexOf(g) : i; };
+  ordem.sort(function (a, b) { return pos(a) - pos(b); });
+  ordem.forEach(function (g) { grupos[g].sort(function (a, b) { return a.nome.localeCompare(b.nome, 'pt-BR', { sensitivity: 'base' }); }); });
+  return { grupos: grupos, ordem: ordem };
+}
+function gCardapio() {
+  var og = gruposCardapio(), h = '<button class="btn" style="margin-top:0;" onclick="formItem()">+ Novo item no cardápio</button>';
+  var temPartes = G.cardapio.some(function (c) { return c.tipo === 'Massa' || c.tipo === 'Recheio' || c.tipo === 'Fruta'; });
+  if (G.montagem) h += '<div class="card" style="margin-top:10px;background:#EEF6EE;">🎨 <b>Monte seu bolo ligado</b>: ' + G.montagem.massas.length + ' massa(s), ' + G.montagem.recheios.length + ' recheio(s), ' + (G.montagem.frutas || []).length + ' fruta(s), base ' + brl(G.montagem.base) + '/kg (muda em Ajustes).</div>';
+  else if (temPartes) h += '<div class="card" style="margin-top:10px;background:#FFF3E0;">🎨 <b>Monte seu bolo desligado.</b> Ele aparece para o cliente quando houver pelo menos 1 massa e 1 recheio ativos e o preço base em Ajustes.</div>';
+  og.ordem.forEach(function (g, gi) {
+    var L = og.grupos[g];
+    h += '<div class="dia" style="display:flex;align-items:center;gap:6px;"><span style="flex:1;">' + esc(g) + ' (' + L.length + ')</span>' +
+      (/^Monte seu bolo/.test(g) ? '' : '<button class="mini" title="Subir" ' + (gi === 0 ? 'disabled' : '') + ' onclick="moverCategoria(' + gi + ',-1)">↑</button>' +
+      '<button class="mini" title="Descer" ' + (gi === og.ordem.length - 1 || /^Monte seu bolo/.test(og.ordem[gi + 1] || '') ? 'disabled' : '') + ' onclick="moverCategoria(' + gi + ',1)">↓</button>' +
+      '<button class="mini" onclick="renomearCategoria(' + gi + ')">✏️ Renomear</button>') + '</div><div class="card">' + L.map(function (c) {
+      var mg = c.margem === null || c.margem === undefined ? '<span class="muted">sem ficha</span>' : '<b style="color:' + (c.margem < 30 ? '#8a5300' : 'var(--verde)') + ';">' + Math.round(c.margem) + '%</b>';
+      var ft = c.tipo.indexOf('Bolo') === 0 ? ' · ' + esc(c.fatiasKg || G.fatiasPadrao || '8 a 10') + ' fatias/kg' : '';
+      var parte = c.tipo === 'Massa' || c.tipo === 'Recheio' || c.tipo === 'Fruta';
+      var preco = parte ? (c.preco ? '+' + brl(c.preco) + '/kg' : 'sem acréscimo') + (c.custo !== null && c.custo !== undefined ? ' · custo ' + brl(c.custo) + '/kg' : '')
+        : brl(c.preco) + '/' + esc(c.tipo === 'Kit' ? 'kit' : c.unidade || 'un') + ft + ' · margem ' + mg;
+      var inclui = c.tipo === 'Kit' ? '<br><span class="muted">📦 ' + esc((c.kitKg ? num(c.kitKg) + ' kg de bolo' : '') + (c.kitKg && c.kitOutros ? '; ' : '') + (c.kitOutros || '')) + '</span>' : '';
+      var mini = c.fotoVer ? '<img src="' + esc(c.fotoVer) + '" alt="" loading="lazy" onerror="this.remove()" style="width:40px;height:40px;object-fit:cover;border-radius:8px;flex-shrink:0;">' : '';
+      return '<div class="linha" style="align-items:center;gap:8px;' + (c.ativo ? '' : 'opacity:.55;') + '">' + mini + '<span class="clicavel" style="flex:1;" onclick="formItem(' + c.linha + ')"><b>' + esc(c.nome) + '</b> ✏️<br><span class="muted">' + preco + (c.ativo ? '' : ' · <b>pausado</b>') + '</span>' + inclui + '</span>' +
+        '<button class="mini" onclick="pausarItem(' + c.linha + ')">' + (c.ativo ? 'Pausar' : 'Ativar') + '</button></div>';
+    }).join('') + '</div>';
+  });
+  return h + '<div class="muted" style="margin-top:8px;">Pausado = some da página de encomendas na hora, sem perder o cadastro. As setas mudam a ordem das categorias na página; dentro de cada categoria os itens ficam em ordem alfabética. Para mudar um item de categoria, abra o item e troque o campo Categoria.</div>';
+}
+function moverCategoria(i, dir) {
+  var ordem = gruposCardapio().ordem.slice(), j = i + dir;
+  if (j < 0 || j >= ordem.length) return;
+  var t = ordem[i]; ordem[i] = ordem[j]; ordem[j] = t;
+  G.ordemCategorias = ordem; renderGestao();
+  chamar('appOrdemCategorias', [ordem], function () { carregarGestao(true); }, function (e) { alert(e.message || e); carregarGestao(true); });
+}
+function renomearCategoria(i) {
+  var de = gruposCardapio().ordem[i];
+  var para = prompt('Novo nome para a categoria "' + de + '":', de);
+  if (para === null) return;
+  para = para.trim();
+  if (!para || para === de) return;
+  chamar('appRenomearCategoria', [de, para], function (n) { avisoG('Categoria renomeada (' + n + ' item(ns)).'); carregarGestao(true); }, function (e) { alert(e.message || e); });
+}
+function itemPorLinha(l) { return G.cardapio.filter(function (c) { return c.linha === l; })[0]; }
+function dadosItem(c, mud) {
+  var d = { linha: c.linha, nomeOriginal: c.nome, ativo: c.ativo, tipo: c.tipo, nome: c.nome, descricao: c.descricao, preco: c.preco, unidade: c.unidade, min: c.min, max: c.max, passo: c.passo, foto: c.foto, categoria: c.categoria, ficha: c.ficha, fatiasKg: c.fatiasKg, kitKg: c.kitKg, kitOutros: c.kitOutros };
+  for (var k in mud) d[k] = mud[k];
+  return d;
+}
+function pausarItem(l) {
+  var c = itemPorLinha(l);
+  c.ativo = !c.ativo; renderGestao();
+  chamar('appSalvarCardapio', [dadosItem(c, { ativo: c.ativo })], function () { carregarGestao(true); }, function (e) { c.ativo = !c.ativo; renderGestao(); alert(e.message || e); });
+}
+function formItem(l) {
+  var c = l ? itemPorLinha(l) : { ativo: true, tipo: 'Bolo (por kg)', nome: '', descricao: '', preco: '', unidade: 'kg', min: '', max: '', passo: '', foto: '', categoria: '', ficha: '', fatiasKg: '' };
+  $('dlCategorias').innerHTML = gruposCardapio().ordem.filter(function (g) { return !/^Monte seu bolo/.test(g); }).map(function (g) { return '<option value="' + esc(g) + '">'; }).join('');
+  var fichas = [{ v: '', t: '(mesmo nome do item)' }].concat(G.fichas.map(function (f) { return f.nome; }));
+  var BOLO = 'Bolo (por kg)', VENDE = [BOLO, 'Produto', 'Adicional', 'Kit'];
+  FOTO_ITEM = null;
+  abrirForm(l ? 'Editar ' + c.nome : 'Novo item', [
+    { id: 'ativo', tipo: 'check', label: 'Aparece na página de encomendas', valor: c.ativo },
+    { id: 'tipo', tipo: 'select', label: 'Tipo', opcoes: [BOLO, 'Produto', 'Adicional', { v: 'Kit', t: 'Kit (preço fechado)' }, { v: 'Massa', t: 'Massa (monte seu bolo)' }, { v: 'Recheio', t: 'Recheio (monte seu bolo)' }, { v: 'Fruta', t: 'Fruta junto do recheio (monte seu bolo)' }], valor: c.tipo, onchange: 'ajustarTipoItem()' },
+    { id: 'nome', label: 'Nome', valor: c.nome },
+    { id: 'descricao', label: 'Descrição (aparece para o cliente)', valor: c.descricao },
+    { id: 'preco', tipo: 'number', label: 'Preço (R$)', valor: c.preco, ajuda: '' },
+    { id: 'kitKg', tipo: 'number', label: 'Kg de bolo no kit (o cliente escolhe o sabor)', valor: c.kitKg, placeholder: 'ex: 2 (vazio = kit sem bolo)', so: ['Kit'] },
+    { id: 'kitOutros', label: 'Outros itens do kit', valor: c.kitOutros, placeholder: '50 Brigadeiro tradicional; 1 Vela de número', so: ['Kit'], ajuda: 'Quantidade e o nome igual ao do cardápio, separados por ponto e vírgula. Assim a produção e os ingredientes saem certos.' },
+    { id: 'unidade', label: 'Unidade', valor: c.unidade, placeholder: 'un, cento...', so: ['Produto', 'Adicional'] },
+    { id: 'min', tipo: 'number', label: 'Mínimo por pedido', valor: c.min, placeholder: 'bolo: 1', so: VENDE },
+    { id: 'max', tipo: 'number', label: 'Máximo por pedido', valor: c.max, placeholder: 'bolo: 6', so: VENDE },
+    { id: 'passo', tipo: 'number', label: 'De quanto em quanto aumenta', valor: c.passo, placeholder: 'bolo: 0,5', so: VENDE },
+    { id: 'categoria', label: 'Categoria (escolha uma ou escreva uma nova)', valor: c.categoria || (/^Monte seu bolo/.test(c.grupo || '') ? '' : c.grupo) || '', lista: 'dlCategorias', placeholder: 'Bolos, Brigadeiros, Kits', so: VENDE },
+    { id: 'fatiasKg', label: 'Fatias por kg', valor: c.fatiasKg, placeholder: 'vazio = ' + (G.fatiasPadrao || '8 a 10') + ' (padrão da loja)', ajuda: 'Um número ou uma faixa, ex: 8 a 10. Aparece para o cliente: "1 kg rende de 8 a 10 fatias". O padrão muda em Ajustes.', so: [BOLO] },
+    { id: 'ficha', tipo: 'select', label: 'Ficha técnica (custo e ingredientes)', opcoes: fichas, valor: c.ficha },
+    { tipo: 'html', html: '<label>Foto</label><div style="display:flex;gap:10px;align-items:center;"><img id="fiPrev" alt="" src="' + esc(c.fotoVer || '') + '" style="width:72px;height:72px;object-fit:cover;border-radius:10px;background:#eee;' + (c.fotoVer ? '' : 'display:none;') + '" onerror="this.style.display=\'none\'">' +
+      '<label class="btn sec" style="margin:0;flex:1;text-align:center;font-weight:700;">📷 Tirar ou escolher foto<input type="file" accept="image/*" onchange="lerFotoItem(this)" style="display:none;"></label></div><div class="muted" id="fiMsg" style="margin-top:4px;"></div>' },
+    { id: 'foto', label: 'ou cole o link de uma imagem', valor: c.foto, placeholder: 'https://...' },
+  ], function (v, pronto) {
+    var d = dadosItem(c, v); d.linha = l || null;
+    if (FOTO_ITEM) d.fotoNova = FOTO_ITEM;
+    gChamar('appSalvarCardapio', [d], pronto);
+  });
+  ajustarTipoItem();
+}
+var FOTO_ITEM = null;
+function ajustarTipoItem() {
+  var t = $('gf_tipo') ? $('gf_tipo').value : '';
+  document.querySelectorAll('#gCorpo [data-so]').forEach(function (el) { el.style.display = el.getAttribute('data-so').split('|').indexOf(t) >= 0 ? '' : 'none'; });
+  var aj = { 'Bolo (por kg)': 'Preço por kg.', Produto: 'Preço por unidade.', Adicional: 'Preço por unidade.', Kit: 'Preço do kit inteiro (já com tudo dentro). Kits não somam nas regras de desconto.',
+    Massa: 'Acréscimo por kg sobre o preço base do Monte seu bolo (' + brl((G.montagem && G.montagem.base) || Number((G.config['Monte seu bolo: preço base (R$/kg)'] || {}).valor) || 0) + '/kg, muda em Ajustes). 0 = sem acréscimo.',
+    Recheio: 'Acréscimo por kg sobre o preço base. Com dois recheios, vale o acréscimo do mais caro. 0 = sem acréscimo.',
+    Fruta: 'Opcional, vai junto do recheio e não conta no limite de recheios. Acréscimo por kg: vale o maior entre os recheios e a fruta. 0 = sem acréscimo.' }[t] || '';
+  if ($('gf_preco_ajuda')) $('gf_preco_ajuda').textContent = aj;
+}
+function lerFotoItem(inp) {
+  var f = inp.files && inp.files[0];
+  if (!f) return;
+  if (!/^image\//.test(f.type)) { alert('Escolha uma imagem.'); return; }
+  $('fiMsg').textContent = 'Preparando a foto...';
+  var img = new Image(), url = URL.createObjectURL(f);
+  img.onload = function () {
+    var max = 1200, k = Math.min(1, max / Math.max(img.width, img.height));
+    var cv = document.createElement('canvas'); cv.width = Math.round(img.width * k); cv.height = Math.round(img.height * k);
+    cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height);
+    var dataUrl = cv.toDataURL('image/jpeg', 0.85);
+    URL.revokeObjectURL(url);
+    FOTO_ITEM = { tipo: 'image/jpeg', base64: dataUrl.split(',')[1] };
+    $('fiPrev').src = dataUrl; $('fiPrev').style.display = '';
+    $('fiMsg').textContent = 'Foto pronta. Toque em Salvar para enviar.';
+  };
+  img.onerror = function () { $('fiMsg').textContent = 'Não consegui abrir essa imagem. Tente outra (JPG ou PNG).'; };
+  img.src = url;
+}
+
+// ── FICHAS TÉCNICAS ──
+function gFichas() {
+  var h = '<button class="btn" style="margin-top:0;" onclick="formFicha()">+ Nova ficha técnica</button>';
+  h += G.fichas.length ? '<div class="card" style="margin-top:12px;">' + G.fichas.map(function (f) {
+    return '<div class="linha clicavel" onclick="formFicha(\'' + f.id + '\')"><span><b>' + esc(f.nome) + '</b><br><span class="muted">rende ' + num(f.rend) + ' · ' + f.itens.length + ' ingrediente(s)</span></span>' +
+      '<span style="text-align:right;"><b>' + brl(f.custoUn) + '</b><br><span class="muted">por unidade</span></span></div>';
+  }).join('') + '</div>' : '<div class="vazio">Nenhuma ficha ainda.</div>';
+  return h + '<div class="muted" style="margin-top:8px;">O rendimento usa a unidade do item do cardápio: bolo em <b>kg</b> (ex: receita que dá 2 kg = 2), doces em unidades. O custo por unidade vira o custo das encomendas e a margem do cardápio.</div>';
+}
+function linhaIng(i, ing) {
+  return '<div class="g2" style="grid-template-columns:2fr 1fr 1fr 1fr 28px;gap:4px;margin-top:6px;" data-ing="' + i + '">' +
+    '<input placeholder="ingrediente" list="dlInsumos" value="' + esc(ing.ing) + '" onchange="preencherIng(this)" class="fi-ing">' +
+    '<input placeholder="qtd" type="number" inputmode="decimal" step="any" value="' + esc(ing.qtd) + '" class="fi-qtd">' +
+    '<input placeholder="un" value="' + esc(ing.un) + '" class="fi-un">' +
+    '<input placeholder="R$/un" type="number" inputmode="decimal" step="any" value="' + esc(ing.custo) + '" class="fi-custo">' +
+    '<button class="mini" style="padding:0;" onclick="this.parentNode.remove()">×</button></div>';
+}
+function preencherIng(el) {
+  var ins = G.insumos.filter(function (x) { return x.nome.toLowerCase() === el.value.trim().toLowerCase(); })[0];
+  if (!ins) return;
+  var row = el.parentNode;
+  if (!row.querySelector('.fi-un').value) row.querySelector('.fi-un').value = ins.un;
+  if (!row.querySelector('.fi-custo').value) row.querySelector('.fi-custo').value = ins.custo;
+}
+function formFicha(id) {
+  var f = id ? G.fichas.filter(function (x) { return x.id === id; })[0] : { nome: '', rend: 1, margem: '', itens: [{ ing: '', qtd: '', un: '', custo: '' }, { ing: '', qtd: '', un: '', custo: '' }, { ing: '', qtd: '', un: '', custo: '' }] };
+  var extras = id ? [{ texto: 'Excluir ficha', perigo: true, acao: function () {
+    if (!confirm('Excluir a ficha ' + f.nome + '?')) return;
+    chamar('appExcluirFicha', [id], function () { fecharModais(); carregarGestao(true); }, function (e) { msg('gMsg', e.message || e, false); });
+  } }] : [];
+  abrirForm(id ? f.nome : 'Nova ficha técnica', [
+    { id: 'nome', label: 'Nome (igual ao item do cardápio, ou escolha a ficha no item)', valor: f.nome },
+    { id: 'rend', tipo: 'number', label: 'Rendimento (kg para bolo; unidades para doces)', valor: f.rend },
+    { id: 'margem', tipo: 'number', label: 'Margem para o preço sugerido (%)', valor: f.margem, placeholder: 'vazio = margem padrão' },
+    { tipo: 'html', html: '<label>Ingredientes (quantidade · unidade · custo por unidade)</label><div id="fiLinhas">' + f.itens.map(function (x, i) { return linhaIng(i, x); }).join('') + '</div>' +
+      '<button class="mini" style="margin-top:8px;" onclick="document.getElementById(\'fiLinhas\').insertAdjacentHTML(\'beforeend\', linhaIng(99, {ing:\'\',qtd:\'\',un:\'\',custo:\'\'}))">+ ingrediente</button>' +
+      '<div class="muted" style="margin-top:4px;">Ingredientes já cadastrados preenchem unidade e custo sozinhos.</div>' },
+  ], function (v, pronto) {
+    var itens = Array.prototype.map.call(document.querySelectorAll('#fiLinhas [data-ing]'), function (r) {
+      return { ing: r.querySelector('.fi-ing').value, qtd: r.querySelector('.fi-qtd').value, un: r.querySelector('.fi-un').value, custo: r.querySelector('.fi-custo').value };
+    });
+    gChamar('appSalvarFicha', [{ id: id || '', nome: v.nome, rend: v.rend, margem: v.margem, itens: itens }], function (ok, m) { pronto(ok, ok ? 'Ficha salva.' : m); });
+  }, extras);
+}
+
+// ── INGREDIENTES ──
+function gIngredientes() {
+  var h = '<button class="btn" style="margin-top:0;" onclick="formCompraIng()">+ Registrar compra / novo ingrediente</button>';
+  h += G.insumos.length ? '<div class="card" style="margin-top:12px;">' + G.insumos.map(function (x) {
+    var baixo = x.qtd <= x.minimo;
+    return '<div class="linha clicavel" onclick="formIng(' + x.linha + ')"><span><b>' + esc(x.nome) + '</b><br><span class="muted">mín. ' + num(x.minimo) + ' ' + esc(x.un) + ' · ' + brl(x.custo) + '/' + esc(x.un || 'un') + (x.atualizado ? ' · atualizado ' + esc(x.atualizado) : '') + '</span></span>' +
+      '<b style="white-space:nowrap;color:' + (baixo ? 'var(--vermelho)' : 'inherit') + ';">' + num(x.qtd) + ' ' + esc(x.un) + (baixo ? ' 🔴' : '') + '</b></div>';
+  }).join('') + '</div>' : '<div class="vazio">Nenhum ingrediente cadastrado.</div>';
+  return h + '<div class="muted" style="margin-top:8px;">Quando uma encomenda é marcada como entregue, os ingredientes da ficha técnica saem daqui sozinhos (e voltam se você desfizer).</div>';
+}
+function formCompraIng(nome) {
+  var ins = nome ? G.insumos.filter(function (x) { return x.nome === nome; })[0] : null;
+  abrirForm(ins ? 'Compra de ' + ins.nome : 'Compra de ingrediente', [
+    { id: 'nome', label: 'Ingrediente', valor: ins ? ins.nome : '', lista: 'dlInsumos', placeholder: 'ex: Leite condensado' },
+    { id: 'un', label: 'Unidade', valor: ins ? ins.un : '', placeholder: 'kg, g, un, L, cx' },
+    { id: 'qtd', tipo: 'number', label: 'Quantidade comprada (negativo para dar baixa)', valor: '' },
+    { id: 'custo', tipo: 'number', label: 'Custo por unidade nesta compra (R$)', valor: ins ? ins.custo : '' },
+    { id: 'minimo', tipo: 'number', label: 'Estoque mínimo (só para ingrediente novo)', valor: ins ? ins.minimo : 1 },
+    { id: 'lancarDespesa', tipo: 'check', label: 'Lançar a compra como despesa (Ingredientes)', valor: true },
+  ], function (v, pronto) { gChamar('appEntradaInsumo', [v], pronto); });
+}
+function formIng(linha) {
+  var x = G.insumos.filter(function (i) { return i.linha === linha; })[0];
+  abrirForm(x.nome, [
+    { id: 'nome', label: 'Nome', valor: x.nome },
+    { id: 'un', label: 'Unidade', valor: x.un },
+    { id: 'qtd', tipo: 'number', label: 'Quantidade em estoque agora (contagem)', valor: x.qtd },
+    { id: 'minimo', tipo: 'number', label: 'Estoque mínimo (alerta)', valor: x.minimo },
+    { id: 'custo', tipo: 'number', label: 'Custo por unidade (R$)', valor: x.custo },
+  ], function (v, pronto) { gChamar('appEditarInsumo', [linha, x.nome, v], pronto); },
+  [{ texto: '🛒 Registrar compra deste', acao: function () { fecharModais(); formCompraIng(x.nome); } }]);
+}
+
+// ── BALCÃO ──
+var gBusca = '';
+function gBalcao() {
+  var h = '';
+  if (!G.ultimaVenda) h += '<div class="alerta">O PDV do balcão ainda não mandou nenhuma venda para a planilha. Abra o PDV no computador da loja pelo link da planilha (🍬 Loja → 📱 Link do app no celular, segundo link) e passe a vender por ele: aí estoque, caixas e relatórios aparecem aqui.</div>';
+  else h += '<div class="muted" style="margin-bottom:8px;">Última venda recebida do PDV: ' + esc(G.ultimaVenda) + '</div>';
+  if (G.ajustesPendentes) h += '<div class="fila">⏳ ' + G.ajustesPendentes + ' mudança(s) de produto esperando o PDV sincronizar.</div>';
+  h += '<div class="dia">Produtos (' + G.produtos.length + ')</div><input id="gBusca" placeholder="Buscar produto..." value="' + esc(gBusca) + '" oninput="gBusca=this.value;document.getElementById(\'gProdutos\').innerHTML=listaProdutos()">' +
+    '<div class="card" style="margin-top:8px;" id="gProdutos">' + listaProdutos() + '</div>';
+  h += '<div class="dia">🏆 Curva ABC (90 dias, por lucro)</div><div class="card">' + (G.abc.length ? G.abc.map(function (x) {
+    return '<div class="linha"><span><b>' + esc(x.classe) + '</b> · ' + esc(x.nome) + '<br><span class="muted">' + x.qtd + ' un · receita ' + brl(x.receita) + '</span></span><b style="color:var(--verde);">' + brl(x.lucro) + '</b></div>';
+  }).join('') + '<div class="muted" style="margin-top:6px;">A = os que fazem 80% do lucro. Nunca deixe faltar.</div>' : '<div class="vazio">Sem vendas no período.</div>') + '</div>';
+  h += '<div class="dia">💤 Parados (com estoque, sem venda há 30+ dias)</div><div class="card">' + (G.parados.length ? G.parados.map(function (x) {
+    return '<div class="linha"><span>' + esc(x.nome) + '</span><span class="muted">' + x.estoque + ' un · última venda ' + (x.ultima || 'nunca') + '</span></div>';
+  }).join('') + '<div class="muted" style="margin-top:6px;">Bons candidatos para promoção ou kit.</div>' : '<div class="vazio">Nenhum produto parado. 🎉</div>') + '</div>';
+  h += '<div class="dia">💵 Caixas</div><div class="card">' + (G.caixas.length ? G.caixas.map(function (c) {
+    var dif = c.diferenca === null ? '<span class="muted">aberto</span>' : Math.abs(c.diferenca) < 0.01 ? '<span style="color:var(--verde);">✅ bateu</span>' : '<b style="color:var(--vermelho);">' + (c.diferenca > 0 ? 'sobrou ' : 'faltou ') + brl(Math.abs(c.diferenca)) + '</b>';
+    return '<div class="linha"><span>' + esc(c.abertura) + (c.fechamento ? ' → ' + esc(c.fechamento.slice(-5)) : '') + '<br><span class="muted">vendeu ' + brl(c.total) + ' · dinheiro ' + brl(c.dinheiro) + ' · pix ' + brl(c.pix) + ' · cartão ' + brl(c.cartao) + '</span></span>' + dif + '</div>';
+  }).join('') : '<div class="vazio">Nenhum caixa registrado.</div>') + '</div>';
+  h += '<div class="dia">🚚 Fornecedores</div><div class="card">' + G.fornecedores.map(function (f) {
+    return '<div class="linha clicavel" onclick="formFornecedor(' + f.linha + ')"><span><b>' + esc(f.nome) + '</b><br><span class="muted">' + (f.whats ? esc(f.whats) : 'sem WhatsApp') + (f.minimo ? ' · pedido mínimo ' + brl(f.minimo) : '') + (f.obs ? ' · ' + esc(f.obs) : '') + '</span></span></div>';
+  }).join('') + '<button class="mini" style="margin-top:8px;" onclick="formFornecedor()">+ Fornecedor</button></div>';
+  return h;
+}
+function listaProdutos() {
+  var b = gBusca.toLowerCase(), L = G.produtos.filter(function (p) { return !b || p.nome.toLowerCase().indexOf(b) >= 0 || p.codigo.indexOf(b) >= 0; });
+  if (!L.length) return '<div class="vazio">' + (G.produtos.length ? 'Nada encontrado.' : 'Nenhum produto. Os produtos são cadastrados no PDV do balcão.') + '</div>';
+  return L.slice(0, 80).map(function (p) {
+    var baixo = p.estoque <= p.minimo;
+    return '<div class="linha clicavel" onclick="formProduto(\'' + p.id + '\')"><span><b>' + esc(p.nome) + '</b><br><span class="muted">' + brl(p.preco) + ' · custo ' + brl(p.custo) + (p.preco ? ' · margem ' + Math.round((p.preco - p.custo) / p.preco * 100) + '%' : '') + '</span></span><b style="white-space:nowrap;' + (baixo ? 'color:var(--vermelho);' : '') + '">' + p.estoque + ' un</b></div>';
+  }).join('') + (L.length > 80 ? '<div class="muted">Mostrando 80 de ' + L.length + '. Use a busca.</div>' : '');
+}
+function formProduto(id) {
+  var p = G.produtos.filter(function (x) { return x.id === id; })[0];
+  abrirForm(p.nome, [
+    { id: 'nome', label: 'Nome', valor: p.nome },
+    { id: 'preco', tipo: 'number', label: 'Preço de venda (R$)', valor: p.preco },
+    { id: 'custo', tipo: 'number', label: 'Custo (R$)', valor: p.custo },
+    { id: 'estoque', tipo: 'number', label: 'Estoque (só mude se contou na prateleira)', valor: p.estoque },
+    { id: 'minimo', tipo: 'number', label: 'Estoque mínimo', valor: p.minimo },
+    { id: 'validade', tipo: 'date', label: 'Validade do lote', valor: p.validade },
+    { id: 'fornecedor', tipo: 'select', label: 'Fornecedor', opcoes: [{ v: '', t: '(nenhum)' }].concat(G.fornecedores.map(function (f) { return f.nome; })), valor: p.fornecedor },
+    { id: 'categoria', label: 'Categoria', valor: p.categoria },
+    { tipo: 'html', html: '<div class="muted" style="margin-top:8px;">Código: ' + esc(p.codigo) + '. A mudança aparece no PDV do balcão na próxima sincronização (a cada 5 min com internet).</div>' },
+  ], function (v, pronto) {
+    var mud = {};
+    ['nome', 'preco', 'custo', 'estoque', 'minimo', 'validade', 'fornecedor', 'categoria'].forEach(function (c) { if (String(v[c]) !== String(p[c])) mud[c] = v[c]; });
+    if (!Object.keys(mud).length) { pronto(true, 'Nada mudou.'); return; }
+    gChamar('appAjustarProduto', [id, mud], pronto);
+  });
+}
+function formFornecedor(linha) {
+  var f = linha ? G.fornecedores.filter(function (x) { return x.linha === linha; })[0] : { nome: '', whats: '', minimo: '', obs: '' };
+  abrirForm(linha ? f.nome : 'Novo fornecedor', [
+    { id: 'nome', label: 'Nome', valor: f.nome },
+    { id: 'whats', tipo: 'tel', label: 'WhatsApp com DDD', valor: f.whats },
+    { id: 'minimo', tipo: 'number', label: 'Pedido mínimo (R$)', valor: f.minimo },
+    { id: 'obs', label: 'Observações (dia de entrega, cidade...)', valor: f.obs },
+  ], function (v, pronto) { v.linha = linha || null; v.nomeOriginal = f.nome; gChamar('appSalvarFornecedor', [v], pronto); },
+  linha ? [{ texto: 'Excluir fornecedor', perigo: true, acao: function () {
+    if (!confirm('Excluir ' + f.nome + '?')) return;
+    chamar('appExcluirFornecedor', [linha, f.nome], function () { fecharModais(); carregarGestao(true); }, function (e) { msg('gMsg', e.message || e, false); });
+  } }] : []);
+}
+
+// ── AJUSTES: configurações, descontos e despesas fixas ──
+var ROTULOS_CFG = { 'Horários de retirada': 'separados por vírgula: 10:00, 14:00', 'Dias sem retirada (ex: dom, seg)': 'dom, seg, ter, qua, qui, sex, sab', 'Reserva sem sinal (horas)': 'depois disso o pedido sem sinal é cancelado', 'Margem padrão da confeitaria (%)': 'usada no preço sugerido' };
+function gAjustes() {
+  var h = '<div class="dia">⚙️ Loja e encomendas</div><div class="card">' + Object.keys(G.config).map(function (c, i) {
+    var x = G.config[c], id = 'cfg' + i;
+    var campo = x.tipo === 'textolongo' ? '<textarea id="' + id + '" data-cfg="' + esc(c) + '">' + esc(x.valor) + '</textarea>'
+      : '<input id="' + id + '" data-cfg="' + esc(c) + '"' + (x.tipo === 'numero' ? ' type="number" inputmode="decimal" step="any"' : '') + ' value="' + esc(x.valor) + '">';
+    return '<label>' + esc(c) + '</label>' + campo + (ROTULOS_CFG[c] ? '<div class="muted" style="margin-top:2px;">' + esc(ROTULOS_CFG[c]) + '</div>' : '');
+  }).join('') + '<button class="btn" onclick="salvarCfg(this)">Salvar configurações</button><div class="msg" id="cfgMsg"></div></div>';
+
+  h += '<div class="dia">🏷️ Descontos por quantidade</div><div class="card"><div class="muted">Vale a regra de maior % que o pedido atingir (não somam). Doces em unidades (1 cento = 100).</div><div id="descLinhas">' +
+    G.descontos.map(function (d) { return linhaDesc(d); }).join('') + '</div>' +
+    '<button class="mini" style="margin-top:8px;" onclick="document.getElementById(\'descLinhas\').insertAdjacentHTML(\'beforeend\', linhaDesc({ativo:true,nome:\'\',kg:0,doces:0,pct:5}))">+ regra</button>' +
+    '<button class="btn" onclick="salvarDescontos(this)">Salvar descontos</button><div class="msg" id="descMsg"></div></div>';
+
+  h += '<div class="dia">🔁 Despesas fixas do mês</div><div class="card"><div class="muted">Lançadas sozinhas no dia do vencimento (só com valor preenchido). O e-mail das 7h avisa 3 dias antes.</div><div id="fixLinhas">' +
+    G.fixas.map(function (f) { return linhaFixa(f); }).join('') + '</div>' +
+    '<button class="mini" style="margin-top:8px;" onclick="document.getElementById(\'fixLinhas\').insertAdjacentHTML(\'beforeend\', linhaFixa({ativo:true,desc:\'\',cat:\'Outros\',valor:\'\',dia:10,ultimo:\'\'}))">+ despesa fixa</button>' +
+    '<button class="btn" onclick="salvarFixas(this)">Salvar despesas fixas</button><div class="msg" id="fixMsg"></div></div>';
+
+  h += '<div class="dia">💾 Backup</div><div class="card"><div class="muted">' + (G.ultimoBackup ? 'Último backup da planilha: ' + esc(G.ultimoBackup) + '. ' : 'Nenhum backup ainda. ') + 'Uma cópia é feita todo domingo de madrugada numa pasta do seu Google Drive (guarda as 8 últimas).</div></div>';
+  return h;
+}
+function linhaDesc(d) {
+  return '<div class="card" data-desc style="background:var(--azul-claro);margin:8px 0 0;padding:10px;">' +
+    '<div style="display:flex;gap:8px;align-items:center;"><input type="checkbox" class="d-at" style="width:auto;"' + (d.ativo ? ' checked' : '') + '><input class="d-nome" placeholder="nome da regra" value="' + esc(d.nome) + '"><button class="mini" onclick="this.closest(\'[data-desc]\').remove()">×</button></div>' +
+    '<div class="g2" style="grid-template-columns:1fr 1fr 1fr;margin-top:6px;"><div><label style="margin-top:0;">Kg de bolo ≥</label><input class="d-kg" type="number" inputmode="decimal" step="any" value="' + esc(d.kg) + '"></div>' +
+    '<div><label style="margin-top:0;">Doces ≥</label><input class="d-doces" type="number" inputmode="numeric" value="' + esc(d.doces) + '"></div>' +
+    '<div><label style="margin-top:0;">Desconto %</label><input class="d-pct" type="number" inputmode="decimal" step="any" value="' + esc(d.pct) + '"></div></div></div>';
+}
+function linhaFixa(f) {
+  return '<div class="card" data-fixa style="background:var(--azul-claro);margin:8px 0 0;padding:10px;" data-ultimo="' + esc(f.ultimo || '') + '">' +
+    '<div style="display:flex;gap:8px;align-items:center;"><input type="checkbox" class="f-at" style="width:auto;"' + (f.ativo ? ' checked' : '') + '><input class="f-desc" placeholder="ex: Aluguel" value="' + esc(f.desc) + '"><button class="mini" onclick="this.closest(\'[data-fixa]\').remove()">×</button></div>' +
+    '<div class="g2" style="grid-template-columns:1.4fr 1fr .8fr;margin-top:6px;"><div><label style="margin-top:0;">Categoria</label><select class="f-cat">' + opt(G.categoriasDespesa, f.cat) + '</select></div>' +
+    '<div><label style="margin-top:0;">Valor R$</label><input class="f-valor" type="number" inputmode="decimal" step="any" value="' + esc(f.valor) + '"></div>' +
+    '<div><label style="margin-top:0;">Dia</label><input class="f-dia" type="number" inputmode="numeric" value="' + esc(f.dia) + '"></div></div>' +
+    (f.ultimo ? '<div class="muted" style="margin-top:4px;">Último lançamento: ' + esc(f.ultimo) + '</div>' : '') + '</div>';
+}
+function salvarCfg(b) {
+  var v = {};
+  document.querySelectorAll('[data-cfg]').forEach(function (el) { v[el.getAttribute('data-cfg')] = el.value; });
+  b.disabled = true;
+  chamar('appSalvarConfig', [v], function () { b.disabled = false; avisoG('Configurações salvas.'); carregarGestao(true); }, function (e) { b.disabled = false; msg('cfgMsg', e.message || e, false); });
+}
+function salvarDescontos(b) {
+  var regras = Array.prototype.map.call(document.querySelectorAll('[data-desc]'), function (r) {
+    return { ativo: r.querySelector('.d-at').checked, nome: r.querySelector('.d-nome').value, kg: r.querySelector('.d-kg').value || 0, doces: r.querySelector('.d-doces').value || 0, pct: r.querySelector('.d-pct').value };
+  });
+  b.disabled = true;
+  chamar('appSalvarDescontos', [regras], function () { b.disabled = false; avisoG('Descontos salvos. Já valem na página de encomendas.'); carregarGestao(true); }, function (e) { b.disabled = false; msg('descMsg', e.message || e, false); });
+}
+function salvarFixas(b) {
+  var fx = Array.prototype.map.call(document.querySelectorAll('[data-fixa]'), function (r) {
+    return { ativo: r.querySelector('.f-at').checked, desc: r.querySelector('.f-desc').value, cat: r.querySelector('.f-cat').value, valor: r.querySelector('.f-valor').value, dia: r.querySelector('.f-dia').value, ultimo: r.getAttribute('data-ultimo') };
+  });
+  b.disabled = true;
+  chamar('appSalvarFixas', [fx], function () { b.disabled = false; avisoG('Despesas fixas salvas.'); carregarGestao(true); }, function (e) { b.disabled = false; msg('fixMsg', e.message || e, false); });
+}
+
+mostrarFila();
+if (CONEXAO) carregar();
+else { $('carregando').classList.add('oculto'); $('semConfig').classList.remove('oculto'); }
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(function () {});
+</script>
+</body>
+</html>

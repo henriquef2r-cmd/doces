@@ -1,0 +1,3299 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Encomendas</title>
+<meta name="theme-color" content="#6B4226">
+<link rel="icon" href="icone.svg">
+<style>
+  :root{--azul:#6B4226;--azul-claro:#F3E9E1;--rosa:#C98B6B;--rosa-claro:#FBEDEA;--verde:#2e7d32;--vermelho:#b3261e;--bg:#F8F4F0;--borda:#E2D6CC;--texto:#3B2A20;}
+  .desconto{background:#FFF3E0;color:#7A4A12;border-radius:12px;padding:10px 12px;font-size:13.5px;margin-bottom:10px;line-height:1.4;}
+  .desconto.ganhou{background:#E8F5E9;color:#1B5E20;}
+  .promo{position:fixed;left:0;right:0;bottom:calc(132px + env(safe-area-inset-bottom));z-index:6;padding:0 10px;pointer-events:none;}
+  .promo-in{max-width:620px;margin:0 auto;background:#FFF3E0;color:#6B3E0C;border:1.5px solid #F3C98B;border-radius:14px;padding:9px 12px;box-shadow:0 6px 18px rgba(60,35,10,.18);font-size:13.5px;line-height:1.35;pointer-events:auto;}
+  .promo-in.ganhou{background:#E8F5E9;color:#1B5E20;border-color:#A5D6A7;}
+  .promo-top{display:flex;align-items:center;gap:10px;}
+  .promo-txt{flex:1;min-width:0;}
+  .promo-txt small{display:block;font-size:12px;opacity:.85;margin-top:1px;}
+  .promo-btn{flex-shrink:0;border:none;border-radius:10px;padding:8px 11px;font-size:13px;font-weight:700;background:#E07B00;color:#fff;}
+  .promo-in.ganhou .promo-btn{background:#2e7d32;}
+  .promo-bar{height:6px;border-radius:3px;background:rgba(224,123,0,.18);margin-top:7px;overflow:hidden;}
+  .promo-bar i{display:block;height:100%;background:#E07B00;border-radius:3px;transition:width .35s ease;}
+  .promo-in.ganhou .promo-bar i{background:#2e7d32;}
+  .promo-x{border:none;background:none;color:inherit;opacity:.55;font-size:18px;line-height:1;padding:0 2px;flex-shrink:0;}
+  .promo-mini{max-width:620px;margin:0 auto;display:flex;justify-content:flex-end;pointer-events:none;}
+  .promo-mini button{pointer-events:auto;border:1.5px solid #F3C98B;background:#FFF3E0;color:#6B3E0C;border-radius:20px;padding:6px 12px;font-size:12.5px;font-weight:700;box-shadow:0 4px 12px rgba(60,35,10,.15);}
+  @keyframes pulo{0%{transform:scale(1)}40%{transform:scale(1.04)}100%{transform:scale(1)}}
+  .promo-in.pulou{animation:pulo .5s ease;}
+  .modos-bolo{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:16px 0 4px;}
+  .modo-bolo{border:1.5px solid var(--borda);background:#fff;border-radius:14px;padding:13px 10px;text-align:center;font-weight:700;color:var(--texto);font-size:14.5px;}
+  .modo-bolo small{display:block;font-weight:500;color:#8a817a;font-size:11.5px;margin-top:3px;line-height:1.3;}
+  .modo-bolo.on{border-color:var(--azul);background:var(--azul-claro);color:var(--azul);}
+  .sugestao{border:1.5px dashed var(--rosa);background:var(--rosa-claro);}
+  .sugestao .chips{margin-top:10px;}
+  .dica-item{font-size:12px;color:#B35F00;font-weight:700;margin-top:3px;}
+  .dica-item.ok{color:#1B5E20;}
+  .dica-item a{color:inherit;}
+  *{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,'Segoe UI',Roboto,sans-serif;-webkit-tap-highlight-color:transparent;}
+  body{background:var(--bg);color:var(--texto);padding-bottom:250px;}
+  header{background:var(--azul);color:#fff;padding:22px 18px 18px;}
+  header h1{font-size:21px;}
+  header p{font-size:13px;opacity:.88;margin-top:4px;line-height:1.45;}
+  main{padding:14px;max-width:620px;margin:0 auto;}
+  .etapas{display:flex;gap:6px;margin-bottom:14px;}
+  .etapas span{flex:1;height:4px;border-radius:2px;background:#ddd5cc;}
+  .etapas span.on{background:var(--azul);}
+  h2{font-size:15px;color:var(--azul);margin:18px 2px 10px;}
+  .card{background:#fff;border-radius:14px;padding:14px;margin-bottom:10px;box-shadow:0 1px 3px rgba(0,0,0,.05);}
+  .item{display:flex;gap:12px;align-items:center;}
+  .item img{width:64px;height:64px;border-radius:10px;object-fit:cover;flex-shrink:0;background:#eee;}
+  .item .info{flex:1;min-width:0;}
+  .item .nome{font-weight:700;font-size:15px;}
+  .item .desc{font-size:12.5px;color:#7a716a;margin-top:2px;line-height:1.35;}
+  .item .preco{font-size:13px;font-weight:700;color:var(--azul);margin-top:4px;}
+  .passo{display:flex;align-items:center;gap:6px;flex-shrink:0;}
+  .passo button{width:36px;height:36px;border-radius:50%;border:1px solid var(--borda);background:#fff;font-size:20px;color:var(--azul);font-weight:700;}
+  .passo button.mais{background:var(--azul);color:#fff;border-color:var(--azul);}
+  .passo .q{min-width:44px;text-align:center;font-weight:700;font-size:14px;}
+  .item.sel{outline:2px solid var(--azul);}
+  label{display:block;font-size:12.5px;color:#5e5650;font-weight:600;margin:12px 0 5px;}
+  select{width:100%;padding:12px;border-radius:10px;border:1px solid var(--borda);font-size:16px;background:#fff;color:var(--texto);}
+  .opcao.grande{align-items:center;cursor:pointer;padding:14px;}
+  .opcao .ilus{width:92px;flex-shrink:0;}
+  .opcao .ilus svg{width:100%;height:auto;display:block;}
+  h3.subgrupo{font-size:13px;color:#6a5f57;margin:14px 2px 8px;}
+  .kit-inclui{font-size:12.5px;color:#5e5650;margin-top:4px;line-height:1.4;}
+  .monte-tot{background:var(--azul-claro);border-radius:10px;padding:10px 12px;margin-top:12px;font-size:13.5px;line-height:1.5;}
+  .monte-add{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #f1ece6;font-size:13.5px;}
+  .monte-add button{border:none;background:none;color:var(--vermelho);font-size:13px;font-weight:700;}
+  input,textarea{width:100%;padding:12px;border-radius:10px;border:1px solid var(--borda);font-size:16px;background:#fff;color:var(--texto);}
+  textarea{min-height:70px;resize:vertical;}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;}
+  .chip{border:1px solid var(--borda);background:#fff;border-radius:12px;padding:9px 12px;font-size:13.5px;font-weight:600;color:#4a433e;text-align:center;}
+  .chip small{display:block;font-weight:500;font-size:11px;color:#8a817a;}
+  .chip.on{background:var(--azul);color:#fff;border-color:var(--azul);}
+  .chip.on small{color:#EADBCB;}
+  .chip:disabled{opacity:.4;}
+  .linha{display:flex;justify-content:space-between;gap:10px;padding:7px 0;font-size:14px;border-bottom:1px solid #f1ece6;}
+  .linha:last-child{border-bottom:none;}
+  .linha.total{font-weight:800;font-size:16px;}
+  .linha.destaque{color:var(--azul);font-weight:800;}
+  .muted{color:#8a817a;font-size:12.5px;line-height:1.45;}
+  .barra{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid var(--borda);padding:12px 14px calc(64px + env(safe-area-inset-bottom));display:flex;gap:10px;align-items:center;z-index:5;}
+  .foto-prev{display:flex;gap:10px;align-items:center;margin-top:8px;}
+  .foto-prev img{width:72px;height:72px;object-fit:cover;border-radius:10px;}
+  .barra .tot{flex:1;font-size:12px;color:#7a716a;}
+  .barra .tot b{display:block;font-size:18px;color:var(--texto);}
+  .btn{display:block;width:100%;border:none;border-radius:12px;padding:14px 18px;font-size:15.5px;font-weight:700;background:var(--azul);color:#fff;text-align:center;text-decoration:none;}
+  .barra .btn{width:auto;flex-shrink:0;}
+  .btn.sec{background:#efe9e3;color:#3d3631;}
+  .btn.zap{background:#25D366;}
+  .btn:disabled{opacity:.5;}
+  .opcao{display:flex;gap:10px;align-items:flex-start;border:1.5px solid var(--borda);border-radius:12px;padding:12px;margin-bottom:8px;background:#fff;}
+  .opcao.on{border-color:var(--azul);background:var(--azul-claro);}
+  .opcao input{width:auto;margin-top:3px;}
+  .opcao b{font-size:14.5px;}
+  .erro{background:var(--rosa-claro);color:var(--vermelho);border-radius:10px;padding:11px;font-size:13.5px;margin-top:10px;}
+  .ok{background:#e8f5e9;color:var(--verde);border-radius:10px;padding:11px;font-size:13.5px;margin-top:10px;}
+  .qr{display:flex;justify-content:center;margin:12px 0;}
+  .qr svg{width:220px;height:220px;}
+  .copia{font-family:monospace;font-size:11px;word-break:break-all;background:#f6f2ee;padding:10px;border-radius:8px;max-height:72px;overflow:auto;}
+  .status{display:flex;gap:4px;margin:6px 0 2px;}
+  .status div{flex:1;text-align:center;font-size:10.5px;color:#9a918a;}
+  .status div i{display:block;height:5px;border-radius:3px;background:#e6dfd8;margin-bottom:5px;}
+  .status div.on{color:var(--azul);font-weight:700;}
+  .status div.on i{background:var(--azul);}
+  .oculto{display:none !important;}
+  .carregando{text-align:center;color:#7a716a;padding:60px 20px;}
+</style>
+</head>
+<body>
+<header>
+  <h1 id="hLoja">🎂 Encomendas</h1>
+  <p id="hSub">Escolha, marque a data e garanta seu pedido com o sinal.</p>
+</header>
+
+<main>
+  <div class="carregando" id="carregando">Carregando o cardápio...</div>
+  <div id="erroGeral" class="erro oculto"></div>
+  <div id="progresso" class="oculto"></div>
+
+  <!-- ETAPA 1: escolher -->
+  <section id="e1" class="oculto">
+    <div id="dicaDesconto" class="oculto"></div>
+    <div id="catalogo"></div>
+  </section>
+
+  <!-- ETAPA 2: data, entrega, dados -->
+  <section id="e2" class="oculto">
+    <h2>📅 Data</h2>
+    <div class="chips" id="datas"></div>
+    <div class="muted" id="datasInfo" style="margin-top:8px;"></div>
+    <h2>🕐 Horário</h2>
+    <div class="chips" id="horarios"></div>
+    <h2 id="tituloModo">📍 Retirada</h2>
+    <div id="modos"></div>
+    <div id="boxEndereco" class="oculto">
+      <label>Endereço de entrega (rua, número, bairro, cidade)</label>
+      <textarea id="endereco" placeholder="Rua, número, complemento, bairro, cidade"></textarea>
+    </div>
+    <h2>🙋 Seus dados</h2>
+    <label>Nome</label><input id="nome" autocomplete="name">
+    <label>WhatsApp com DDD</label><input id="whats" type="tel" inputmode="tel" autocomplete="tel" placeholder="11 99999-8888">
+    <label>Observações (tema, cores, escrita no bolo...)</label>
+    <textarea id="obs" placeholder="Ex: tema Frozen, escrever 'Parabéns Ana'"></textarea>
+    <label>Foto de referência (opcional)</label>
+    <input type="file" id="foto" accept="image/*" onchange="lerFoto(this)">
+    <div class="foto-prev oculto" id="fotoPrev"><img id="fotoImg" alt=""><span class="muted">Foto anexada. <a href="#" onclick="tirarFoto();return false;">Remover</a></span></div>
+    <div id="erro2" class="erro oculto"></div>
+  </section>
+
+  <!-- ETAPA 3: resumo e pagamento -->
+  <section id="e3" class="oculto">
+    <h2>🧾 Resumo</h2>
+    <div class="card" id="resumo"></div>
+    <h2>💳 Como quer pagar o sinal?</h2>
+    <div id="formas"></div>
+    <div class="card" style="margin-top:8px;">
+      <div class="muted" id="politica"></div>
+      <label style="display:flex;gap:8px;align-items:flex-start;font-weight:500;margin-top:10px;"><input type="checkbox" id="aceite" style="width:auto;margin-top:2px;" onchange="limparErro('erro3')"> Li e aceito a política de cancelamento.</label>
+    </div>
+    <div id="erro3" class="erro oculto"></div>
+  </section>
+
+  <!-- PEDIDO (depois de criado / link de acompanhamento) -->
+  <section id="ePedido" class="oculto"></section>
+</main>
+
+<div class="promo oculto" id="promo"></div>
+<div class="barra oculto" id="barra">
+  <button class="btn sec" id="btnVoltar" onclick="voltar()">←</button>
+  <div class="tot"><span id="barraRotulo">Total</span><b id="barraTotal">R$ 0,00</b></div>
+  <button class="btn" id="btnAvancar" onclick="avancar()">Continuar</button>
+</div>
+
+<script>
+//---------------------------------------------------------------------
+//
+// QR Code Generator for JavaScript
+//
+// Copyright (c) 2009 Kazuhiko Arase
+//
+// URL: http://www.d-project.com/
+//
+// Licensed under the MIT license:
+//  http://www.opensource.org/licenses/mit-license.php
+//
+// The word 'QR Code' is registered trademark of
+// DENSO WAVE INCORPORATED
+//  http://www.denso-wave.com/qrcode/faqpatent-e.html
+//
+//---------------------------------------------------------------------
+
+var qrcode = function() {
+
+  //---------------------------------------------------------------------
+  // qrcode
+  //---------------------------------------------------------------------
+
+  /**
+   * qrcode
+   * @param typeNumber 1 to 40
+   * @param errorCorrectionLevel 'L','M','Q','H'
+   */
+  var qrcode = function(typeNumber, errorCorrectionLevel) {
+
+    var PAD0 = 0xEC;
+    var PAD1 = 0x11;
+
+    var _typeNumber = typeNumber;
+    var _errorCorrectionLevel = QRErrorCorrectionLevel[errorCorrectionLevel];
+    var _modules = null;
+    var _moduleCount = 0;
+    var _dataCache = null;
+    var _dataList = [];
+
+    var _this = {};
+
+    var makeImpl = function(test, maskPattern) {
+
+      _moduleCount = _typeNumber * 4 + 17;
+      _modules = function(moduleCount) {
+        var modules = new Array(moduleCount);
+        for (var row = 0; row < moduleCount; row += 1) {
+          modules[row] = new Array(moduleCount);
+          for (var col = 0; col < moduleCount; col += 1) {
+            modules[row][col] = null;
+          }
+        }
+        return modules;
+      }(_moduleCount);
+
+      setupPositionProbePattern(0, 0);
+      setupPositionProbePattern(_moduleCount - 7, 0);
+      setupPositionProbePattern(0, _moduleCount - 7);
+      setupPositionAdjustPattern();
+      setupTimingPattern();
+      setupTypeInfo(test, maskPattern);
+
+      if (_typeNumber >= 7) {
+        setupTypeNumber(test);
+      }
+
+      if (_dataCache == null) {
+        _dataCache = createData(_typeNumber, _errorCorrectionLevel, _dataList);
+      }
+
+      mapData(_dataCache, maskPattern);
+    };
+
+    var setupPositionProbePattern = function(row, col) {
+
+      for (var r = -1; r <= 7; r += 1) {
+
+        if (row + r <= -1 || _moduleCount <= row + r) continue;
+
+        for (var c = -1; c <= 7; c += 1) {
+
+          if (col + c <= -1 || _moduleCount <= col + c) continue;
+
+          if ( (0 <= r && r <= 6 && (c == 0 || c == 6) )
+              || (0 <= c && c <= 6 && (r == 0 || r == 6) )
+              || (2 <= r && r <= 4 && 2 <= c && c <= 4) ) {
+            _modules[row + r][col + c] = true;
+          } else {
+            _modules[row + r][col + c] = false;
+          }
+        }
+      }
+    };
+
+    var getBestMaskPattern = function() {
+
+      var minLostPoint = 0;
+      var pattern = 0;
+
+      for (var i = 0; i < 8; i += 1) {
+
+        makeImpl(true, i);
+
+        var lostPoint = QRUtil.getLostPoint(_this);
+
+        if (i == 0 || minLostPoint > lostPoint) {
+          minLostPoint = lostPoint;
+          pattern = i;
+        }
+      }
+
+      return pattern;
+    };
+
+    var setupTimingPattern = function() {
+
+      for (var r = 8; r < _moduleCount - 8; r += 1) {
+        if (_modules[r][6] != null) {
+          continue;
+        }
+        _modules[r][6] = (r % 2 == 0);
+      }
+
+      for (var c = 8; c < _moduleCount - 8; c += 1) {
+        if (_modules[6][c] != null) {
+          continue;
+        }
+        _modules[6][c] = (c % 2 == 0);
+      }
+    };
+
+    var setupPositionAdjustPattern = function() {
+
+      var pos = QRUtil.getPatternPosition(_typeNumber);
+
+      for (var i = 0; i < pos.length; i += 1) {
+
+        for (var j = 0; j < pos.length; j += 1) {
+
+          var row = pos[i];
+          var col = pos[j];
+
+          if (_modules[row][col] != null) {
+            continue;
+          }
+
+          for (var r = -2; r <= 2; r += 1) {
+
+            for (var c = -2; c <= 2; c += 1) {
+
+              if (r == -2 || r == 2 || c == -2 || c == 2
+                  || (r == 0 && c == 0) ) {
+                _modules[row + r][col + c] = true;
+              } else {
+                _modules[row + r][col + c] = false;
+              }
+            }
+          }
+        }
+      }
+    };
+
+    var setupTypeNumber = function(test) {
+
+      var bits = QRUtil.getBCHTypeNumber(_typeNumber);
+
+      for (var i = 0; i < 18; i += 1) {
+        var mod = (!test && ( (bits >> i) & 1) == 1);
+        _modules[Math.floor(i / 3)][i % 3 + _moduleCount - 8 - 3] = mod;
+      }
+
+      for (var i = 0; i < 18; i += 1) {
+        var mod = (!test && ( (bits >> i) & 1) == 1);
+        _modules[i % 3 + _moduleCount - 8 - 3][Math.floor(i / 3)] = mod;
+      }
+    };
+
+    var setupTypeInfo = function(test, maskPattern) {
+
+      var data = (_errorCorrectionLevel << 3) | maskPattern;
+      var bits = QRUtil.getBCHTypeInfo(data);
+
+      // vertical
+      for (var i = 0; i < 15; i += 1) {
+
+        var mod = (!test && ( (bits >> i) & 1) == 1);
+
+        if (i < 6) {
+          _modules[i][8] = mod;
+        } else if (i < 8) {
+          _modules[i + 1][8] = mod;
+        } else {
+          _modules[_moduleCount - 15 + i][8] = mod;
+        }
+      }
+
+      // horizontal
+      for (var i = 0; i < 15; i += 1) {
+
+        var mod = (!test && ( (bits >> i) & 1) == 1);
+
+        if (i < 8) {
+          _modules[8][_moduleCount - i - 1] = mod;
+        } else if (i < 9) {
+          _modules[8][15 - i - 1 + 1] = mod;
+        } else {
+          _modules[8][15 - i - 1] = mod;
+        }
+      }
+
+      // fixed module
+      _modules[_moduleCount - 8][8] = (!test);
+    };
+
+    var mapData = function(data, maskPattern) {
+
+      var inc = -1;
+      var row = _moduleCount - 1;
+      var bitIndex = 7;
+      var byteIndex = 0;
+      var maskFunc = QRUtil.getMaskFunction(maskPattern);
+
+      for (var col = _moduleCount - 1; col > 0; col -= 2) {
+
+        if (col == 6) col -= 1;
+
+        while (true) {
+
+          for (var c = 0; c < 2; c += 1) {
+
+            if (_modules[row][col - c] == null) {
+
+              var dark = false;
+
+              if (byteIndex < data.length) {
+                dark = ( ( (data[byteIndex] >>> bitIndex) & 1) == 1);
+              }
+
+              var mask = maskFunc(row, col - c);
+
+              if (mask) {
+                dark = !dark;
+              }
+
+              _modules[row][col - c] = dark;
+              bitIndex -= 1;
+
+              if (bitIndex == -1) {
+                byteIndex += 1;
+                bitIndex = 7;
+              }
+            }
+          }
+
+          row += inc;
+
+          if (row < 0 || _moduleCount <= row) {
+            row -= inc;
+            inc = -inc;
+            break;
+          }
+        }
+      }
+    };
+
+    var createBytes = function(buffer, rsBlocks) {
+
+      var offset = 0;
+
+      var maxDcCount = 0;
+      var maxEcCount = 0;
+
+      var dcdata = new Array(rsBlocks.length);
+      var ecdata = new Array(rsBlocks.length);
+
+      for (var r = 0; r < rsBlocks.length; r += 1) {
+
+        var dcCount = rsBlocks[r].dataCount;
+        var ecCount = rsBlocks[r].totalCount - dcCount;
+
+        maxDcCount = Math.max(maxDcCount, dcCount);
+        maxEcCount = Math.max(maxEcCount, ecCount);
+
+        dcdata[r] = new Array(dcCount);
+
+        for (var i = 0; i < dcdata[r].length; i += 1) {
+          dcdata[r][i] = 0xff & buffer.getBuffer()[i + offset];
+        }
+        offset += dcCount;
+
+        var rsPoly = QRUtil.getErrorCorrectPolynomial(ecCount);
+        var rawPoly = qrPolynomial(dcdata[r], rsPoly.getLength() - 1);
+
+        var modPoly = rawPoly.mod(rsPoly);
+        ecdata[r] = new Array(rsPoly.getLength() - 1);
+        for (var i = 0; i < ecdata[r].length; i += 1) {
+          var modIndex = i + modPoly.getLength() - ecdata[r].length;
+          ecdata[r][i] = (modIndex >= 0)? modPoly.getAt(modIndex) : 0;
+        }
+      }
+
+      var totalCodeCount = 0;
+      for (var i = 0; i < rsBlocks.length; i += 1) {
+        totalCodeCount += rsBlocks[i].totalCount;
+      }
+
+      var data = new Array(totalCodeCount);
+      var index = 0;
+
+      for (var i = 0; i < maxDcCount; i += 1) {
+        for (var r = 0; r < rsBlocks.length; r += 1) {
+          if (i < dcdata[r].length) {
+            data[index] = dcdata[r][i];
+            index += 1;
+          }
+        }
+      }
+
+      for (var i = 0; i < maxEcCount; i += 1) {
+        for (var r = 0; r < rsBlocks.length; r += 1) {
+          if (i < ecdata[r].length) {
+            data[index] = ecdata[r][i];
+            index += 1;
+          }
+        }
+      }
+
+      return data;
+    };
+
+    var createData = function(typeNumber, errorCorrectionLevel, dataList) {
+
+      var rsBlocks = QRRSBlock.getRSBlocks(typeNumber, errorCorrectionLevel);
+
+      var buffer = qrBitBuffer();
+
+      for (var i = 0; i < dataList.length; i += 1) {
+        var data = dataList[i];
+        buffer.put(data.getMode(), 4);
+        buffer.put(data.getLength(), QRUtil.getLengthInBits(data.getMode(), typeNumber) );
+        data.write(buffer);
+      }
+
+      // calc num max data.
+      var totalDataCount = 0;
+      for (var i = 0; i < rsBlocks.length; i += 1) {
+        totalDataCount += rsBlocks[i].dataCount;
+      }
+
+      if (buffer.getLengthInBits() > totalDataCount * 8) {
+        throw 'code length overflow. ('
+          + buffer.getLengthInBits()
+          + '>'
+          + totalDataCount * 8
+          + ')';
+      }
+
+      // end code
+      if (buffer.getLengthInBits() + 4 <= totalDataCount * 8) {
+        buffer.put(0, 4);
+      }
+
+      // padding
+      while (buffer.getLengthInBits() % 8 != 0) {
+        buffer.putBit(false);
+      }
+
+      // padding
+      while (true) {
+
+        if (buffer.getLengthInBits() >= totalDataCount * 8) {
+          break;
+        }
+        buffer.put(PAD0, 8);
+
+        if (buffer.getLengthInBits() >= totalDataCount * 8) {
+          break;
+        }
+        buffer.put(PAD1, 8);
+      }
+
+      return createBytes(buffer, rsBlocks);
+    };
+
+    _this.addData = function(data, mode) {
+
+      mode = mode || 'Byte';
+
+      var newData = null;
+
+      switch(mode) {
+      case 'Numeric' :
+        newData = qrNumber(data);
+        break;
+      case 'Alphanumeric' :
+        newData = qrAlphaNum(data);
+        break;
+      case 'Byte' :
+        newData = qr8BitByte(data);
+        break;
+      case 'Kanji' :
+        newData = qrKanji(data);
+        break;
+      default :
+        throw 'mode:' + mode;
+      }
+
+      _dataList.push(newData);
+      _dataCache = null;
+    };
+
+    _this.isDark = function(row, col) {
+      if (row < 0 || _moduleCount <= row || col < 0 || _moduleCount <= col) {
+        throw row + ',' + col;
+      }
+      return _modules[row][col];
+    };
+
+    _this.getModuleCount = function() {
+      return _moduleCount;
+    };
+
+    _this.make = function() {
+      if (_typeNumber < 1) {
+        var typeNumber = 1;
+
+        for (; typeNumber < 40; typeNumber++) {
+          var rsBlocks = QRRSBlock.getRSBlocks(typeNumber, _errorCorrectionLevel);
+          var buffer = qrBitBuffer();
+
+          for (var i = 0; i < _dataList.length; i++) {
+            var data = _dataList[i];
+            buffer.put(data.getMode(), 4);
+            buffer.put(data.getLength(), QRUtil.getLengthInBits(data.getMode(), typeNumber) );
+            data.write(buffer);
+          }
+
+          var totalDataCount = 0;
+          for (var i = 0; i < rsBlocks.length; i++) {
+            totalDataCount += rsBlocks[i].dataCount;
+          }
+
+          if (buffer.getLengthInBits() <= totalDataCount * 8) {
+            break;
+          }
+        }
+
+        _typeNumber = typeNumber;
+      }
+
+      makeImpl(false, getBestMaskPattern() );
+    };
+
+    _this.createTableTag = function(cellSize, margin) {
+
+      cellSize = cellSize || 2;
+      margin = (typeof margin == 'undefined')? cellSize * 4 : margin;
+
+      var qrHtml = '';
+
+      qrHtml += '<table style="';
+      qrHtml += ' border-width: 0px; border-style: none;';
+      qrHtml += ' border-collapse: collapse;';
+      qrHtml += ' padding: 0px; margin: ' + margin + 'px;';
+      qrHtml += '">';
+      qrHtml += '<tbody>';
+
+      for (var r = 0; r < _this.getModuleCount(); r += 1) {
+
+        qrHtml += '<tr>';
+
+        for (var c = 0; c < _this.getModuleCount(); c += 1) {
+          qrHtml += '<td style="';
+          qrHtml += ' border-width: 0px; border-style: none;';
+          qrHtml += ' border-collapse: collapse;';
+          qrHtml += ' padding: 0px; margin: 0px;';
+          qrHtml += ' width: ' + cellSize + 'px;';
+          qrHtml += ' height: ' + cellSize + 'px;';
+          qrHtml += ' background-color: ';
+          qrHtml += _this.isDark(r, c)? '#000000' : '#ffffff';
+          qrHtml += ';';
+          qrHtml += '"/>';
+        }
+
+        qrHtml += '</tr>';
+      }
+
+      qrHtml += '</tbody>';
+      qrHtml += '</table>';
+
+      return qrHtml;
+    };
+
+    _this.createSvgTag = function(cellSize, margin, alt, title) {
+
+      var opts = {};
+      if (typeof arguments[0] == 'object') {
+        // Called by options.
+        opts = arguments[0];
+        // overwrite cellSize and margin.
+        cellSize = opts.cellSize;
+        margin = opts.margin;
+        alt = opts.alt;
+        title = opts.title;
+      }
+
+      cellSize = cellSize || 2;
+      margin = (typeof margin == 'undefined')? cellSize * 4 : margin;
+
+      // Compose alt property surrogate
+      alt = (typeof alt === 'string') ? {text: alt} : alt || {};
+      alt.text = alt.text || null;
+      alt.id = (alt.text) ? alt.id || 'qrcode-description' : null;
+
+      // Compose title property surrogate
+      title = (typeof title === 'string') ? {text: title} : title || {};
+      title.text = title.text || null;
+      title.id = (title.text) ? title.id || 'qrcode-title' : null;
+
+      var size = _this.getModuleCount() * cellSize + margin * 2;
+      var c, mc, r, mr, qrSvg='', rect;
+
+      rect = 'l' + cellSize + ',0 0,' + cellSize +
+        ' -' + cellSize + ',0 0,-' + cellSize + 'z ';
+
+      qrSvg += '<svg version="1.1" xmlns="http://www.w3.org/2000/svg"';
+      qrSvg += !opts.scalable ? ' width="' + size + 'px" height="' + size + 'px"' : '';
+      qrSvg += ' viewBox="0 0 ' + size + ' ' + size + '" ';
+      qrSvg += ' preserveAspectRatio="xMinYMin meet"';
+      qrSvg += (title.text || alt.text) ? ' role="img" aria-labelledby="' +
+          escapeXml([title.id, alt.id].join(' ').trim() ) + '"' : '';
+      qrSvg += '>';
+      qrSvg += (title.text) ? '<title id="' + escapeXml(title.id) + '">' +
+          escapeXml(title.text) + '</title>' : '';
+      qrSvg += (alt.text) ? '<description id="' + escapeXml(alt.id) + '">' +
+          escapeXml(alt.text) + '</description>' : '';
+      qrSvg += '<rect width="100%" height="100%" fill="white" cx="0" cy="0"/>';
+      qrSvg += '<path d="';
+
+      for (r = 0; r < _this.getModuleCount(); r += 1) {
+        mr = r * cellSize + margin;
+        for (c = 0; c < _this.getModuleCount(); c += 1) {
+          if (_this.isDark(r, c) ) {
+            mc = c*cellSize+margin;
+            qrSvg += 'M' + mc + ',' + mr + rect;
+          }
+        }
+      }
+
+      qrSvg += '" stroke="transparent" fill="black"/>';
+      qrSvg += '</svg>';
+
+      return qrSvg;
+    };
+
+    _this.createDataURL = function(cellSize, margin) {
+
+      cellSize = cellSize || 2;
+      margin = (typeof margin == 'undefined')? cellSize * 4 : margin;
+
+      var size = _this.getModuleCount() * cellSize + margin * 2;
+      var min = margin;
+      var max = size - margin;
+
+      return createDataURL(size, size, function(x, y) {
+        if (min <= x && x < max && min <= y && y < max) {
+          var c = Math.floor( (x - min) / cellSize);
+          var r = Math.floor( (y - min) / cellSize);
+          return _this.isDark(r, c)? 0 : 1;
+        } else {
+          return 1;
+        }
+      } );
+    };
+
+    _this.createImgTag = function(cellSize, margin, alt) {
+
+      cellSize = cellSize || 2;
+      margin = (typeof margin == 'undefined')? cellSize * 4 : margin;
+
+      var size = _this.getModuleCount() * cellSize + margin * 2;
+
+      var img = '';
+      img += '<img';
+      img += '\u0020src="';
+      img += _this.createDataURL(cellSize, margin);
+      img += '"';
+      img += '\u0020width="';
+      img += size;
+      img += '"';
+      img += '\u0020height="';
+      img += size;
+      img += '"';
+      if (alt) {
+        img += '\u0020alt="';
+        img += escapeXml(alt);
+        img += '"';
+      }
+      img += '/>';
+
+      return img;
+    };
+
+    var escapeXml = function(s) {
+      var escaped = '';
+      for (var i = 0; i < s.length; i += 1) {
+        var c = s.charAt(i);
+        switch(c) {
+        case '<': escaped += '&lt;'; break;
+        case '>': escaped += '&gt;'; break;
+        case '&': escaped += '&amp;'; break;
+        case '"': escaped += '&quot;'; break;
+        default : escaped += c; break;
+        }
+      }
+      return escaped;
+    };
+
+    var _createHalfASCII = function(margin) {
+      var cellSize = 1;
+      margin = (typeof margin == 'undefined')? cellSize * 2 : margin;
+
+      var size = _this.getModuleCount() * cellSize + margin * 2;
+      var min = margin;
+      var max = size - margin;
+
+      var y, x, r1, r2, p;
+
+      var blocks = {
+        '██': '█',
+        '█ ': '▀',
+        ' █': '▄',
+        '  ': ' '
+      };
+
+      var blocksLastLineNoMargin = {
+        '██': '▀',
+        '█ ': '▀',
+        ' █': ' ',
+        '  ': ' '
+      };
+
+      var ascii = '';
+      for (y = 0; y < size; y += 2) {
+        r1 = Math.floor((y - min) / cellSize);
+        r2 = Math.floor((y + 1 - min) / cellSize);
+        for (x = 0; x < size; x += 1) {
+          p = '█';
+
+          if (min <= x && x < max && min <= y && y < max && _this.isDark(r1, Math.floor((x - min) / cellSize))) {
+            p = ' ';
+          }
+
+          if (min <= x && x < max && min <= y+1 && y+1 < max && _this.isDark(r2, Math.floor((x - min) / cellSize))) {
+            p += ' ';
+          }
+          else {
+            p += '█';
+          }
+
+          // Output 2 characters per pixel, to create full square. 1 character per pixels gives only half width of square.
+          ascii += (margin < 1 && y+1 >= max) ? blocksLastLineNoMargin[p] : blocks[p];
+        }
+
+        ascii += '\n';
+      }
+
+      if (size % 2 && margin > 0) {
+        return ascii.substring(0, ascii.length - size - 1) + Array(size+1).join('▀');
+      }
+
+      return ascii.substring(0, ascii.length-1);
+    };
+
+    _this.createASCII = function(cellSize, margin) {
+      cellSize = cellSize || 1;
+
+      if (cellSize < 2) {
+        return _createHalfASCII(margin);
+      }
+
+      cellSize -= 1;
+      margin = (typeof margin == 'undefined')? cellSize * 2 : margin;
+
+      var size = _this.getModuleCount() * cellSize + margin * 2;
+      var min = margin;
+      var max = size - margin;
+
+      var y, x, r, p;
+
+      var white = Array(cellSize+1).join('██');
+      var black = Array(cellSize+1).join('  ');
+
+      var ascii = '';
+      var line = '';
+      for (y = 0; y < size; y += 1) {
+        r = Math.floor( (y - min) / cellSize);
+        line = '';
+        for (x = 0; x < size; x += 1) {
+          p = 1;
+
+          if (min <= x && x < max && min <= y && y < max && _this.isDark(r, Math.floor((x - min) / cellSize))) {
+            p = 0;
+          }
+
+          // Output 2 characters per pixel, to create full square. 1 character per pixels gives only half width of square.
+          line += p ? white : black;
+        }
+
+        for (r = 0; r < cellSize; r += 1) {
+          ascii += line + '\n';
+        }
+      }
+
+      return ascii.substring(0, ascii.length-1);
+    };
+
+    _this.renderTo2dContext = function(context, cellSize) {
+      cellSize = cellSize || 2;
+      var length = _this.getModuleCount();
+      for (var row = 0; row < length; row++) {
+        for (var col = 0; col < length; col++) {
+          context.fillStyle = _this.isDark(row, col) ? 'black' : 'white';
+          context.fillRect(row * cellSize, col * cellSize, cellSize, cellSize);
+        }
+      }
+    }
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // qrcode.stringToBytes
+  //---------------------------------------------------------------------
+
+  qrcode.stringToBytesFuncs = {
+    'default' : function(s) {
+      var bytes = [];
+      for (var i = 0; i < s.length; i += 1) {
+        var c = s.charCodeAt(i);
+        bytes.push(c & 0xff);
+      }
+      return bytes;
+    }
+  };
+
+  qrcode.stringToBytes = qrcode.stringToBytesFuncs['default'];
+
+  //---------------------------------------------------------------------
+  // qrcode.createStringToBytes
+  //---------------------------------------------------------------------
+
+  /**
+   * @param unicodeData base64 string of byte array.
+   * [16bit Unicode],[16bit Bytes], ...
+   * @param numChars
+   */
+  qrcode.createStringToBytes = function(unicodeData, numChars) {
+
+    // create conversion map.
+
+    var unicodeMap = function() {
+
+      var bin = base64DecodeInputStream(unicodeData);
+      var read = function() {
+        var b = bin.read();
+        if (b == -1) throw 'eof';
+        return b;
+      };
+
+      var count = 0;
+      var unicodeMap = {};
+      while (true) {
+        var b0 = bin.read();
+        if (b0 == -1) break;
+        var b1 = read();
+        var b2 = read();
+        var b3 = read();
+        var k = String.fromCharCode( (b0 << 8) | b1);
+        var v = (b2 << 8) | b3;
+        unicodeMap[k] = v;
+        count += 1;
+      }
+      if (count != numChars) {
+        throw count + ' != ' + numChars;
+      }
+
+      return unicodeMap;
+    }();
+
+    var unknownChar = '?'.charCodeAt(0);
+
+    return function(s) {
+      var bytes = [];
+      for (var i = 0; i < s.length; i += 1) {
+        var c = s.charCodeAt(i);
+        if (c < 128) {
+          bytes.push(c);
+        } else {
+          var b = unicodeMap[s.charAt(i)];
+          if (typeof b == 'number') {
+            if ( (b & 0xff) == b) {
+              // 1byte
+              bytes.push(b);
+            } else {
+              // 2bytes
+              bytes.push(b >>> 8);
+              bytes.push(b & 0xff);
+            }
+          } else {
+            bytes.push(unknownChar);
+          }
+        }
+      }
+      return bytes;
+    };
+  };
+
+  //---------------------------------------------------------------------
+  // QRMode
+  //---------------------------------------------------------------------
+
+  var QRMode = {
+    MODE_NUMBER :    1 << 0,
+    MODE_ALPHA_NUM : 1 << 1,
+    MODE_8BIT_BYTE : 1 << 2,
+    MODE_KANJI :     1 << 3
+  };
+
+  //---------------------------------------------------------------------
+  // QRErrorCorrectionLevel
+  //---------------------------------------------------------------------
+
+  var QRErrorCorrectionLevel = {
+    L : 1,
+    M : 0,
+    Q : 3,
+    H : 2
+  };
+
+  //---------------------------------------------------------------------
+  // QRMaskPattern
+  //---------------------------------------------------------------------
+
+  var QRMaskPattern = {
+    PATTERN000 : 0,
+    PATTERN001 : 1,
+    PATTERN010 : 2,
+    PATTERN011 : 3,
+    PATTERN100 : 4,
+    PATTERN101 : 5,
+    PATTERN110 : 6,
+    PATTERN111 : 7
+  };
+
+  //---------------------------------------------------------------------
+  // QRUtil
+  //---------------------------------------------------------------------
+
+  var QRUtil = function() {
+
+    var PATTERN_POSITION_TABLE = [
+      [],
+      [6, 18],
+      [6, 22],
+      [6, 26],
+      [6, 30],
+      [6, 34],
+      [6, 22, 38],
+      [6, 24, 42],
+      [6, 26, 46],
+      [6, 28, 50],
+      [6, 30, 54],
+      [6, 32, 58],
+      [6, 34, 62],
+      [6, 26, 46, 66],
+      [6, 26, 48, 70],
+      [6, 26, 50, 74],
+      [6, 30, 54, 78],
+      [6, 30, 56, 82],
+      [6, 30, 58, 86],
+      [6, 34, 62, 90],
+      [6, 28, 50, 72, 94],
+      [6, 26, 50, 74, 98],
+      [6, 30, 54, 78, 102],
+      [6, 28, 54, 80, 106],
+      [6, 32, 58, 84, 110],
+      [6, 30, 58, 86, 114],
+      [6, 34, 62, 90, 118],
+      [6, 26, 50, 74, 98, 122],
+      [6, 30, 54, 78, 102, 126],
+      [6, 26, 52, 78, 104, 130],
+      [6, 30, 56, 82, 108, 134],
+      [6, 34, 60, 86, 112, 138],
+      [6, 30, 58, 86, 114, 142],
+      [6, 34, 62, 90, 118, 146],
+      [6, 30, 54, 78, 102, 126, 150],
+      [6, 24, 50, 76, 102, 128, 154],
+      [6, 28, 54, 80, 106, 132, 158],
+      [6, 32, 58, 84, 110, 136, 162],
+      [6, 26, 54, 82, 110, 138, 166],
+      [6, 30, 58, 86, 114, 142, 170]
+    ];
+    var G15 = (1 << 10) | (1 << 8) | (1 << 5) | (1 << 4) | (1 << 2) | (1 << 1) | (1 << 0);
+    var G18 = (1 << 12) | (1 << 11) | (1 << 10) | (1 << 9) | (1 << 8) | (1 << 5) | (1 << 2) | (1 << 0);
+    var G15_MASK = (1 << 14) | (1 << 12) | (1 << 10) | (1 << 4) | (1 << 1);
+
+    var _this = {};
+
+    var getBCHDigit = function(data) {
+      var digit = 0;
+      while (data != 0) {
+        digit += 1;
+        data >>>= 1;
+      }
+      return digit;
+    };
+
+    _this.getBCHTypeInfo = function(data) {
+      var d = data << 10;
+      while (getBCHDigit(d) - getBCHDigit(G15) >= 0) {
+        d ^= (G15 << (getBCHDigit(d) - getBCHDigit(G15) ) );
+      }
+      return ( (data << 10) | d) ^ G15_MASK;
+    };
+
+    _this.getBCHTypeNumber = function(data) {
+      var d = data << 12;
+      while (getBCHDigit(d) - getBCHDigit(G18) >= 0) {
+        d ^= (G18 << (getBCHDigit(d) - getBCHDigit(G18) ) );
+      }
+      return (data << 12) | d;
+    };
+
+    _this.getPatternPosition = function(typeNumber) {
+      return PATTERN_POSITION_TABLE[typeNumber - 1];
+    };
+
+    _this.getMaskFunction = function(maskPattern) {
+
+      switch (maskPattern) {
+
+      case QRMaskPattern.PATTERN000 :
+        return function(i, j) { return (i + j) % 2 == 0; };
+      case QRMaskPattern.PATTERN001 :
+        return function(i, j) { return i % 2 == 0; };
+      case QRMaskPattern.PATTERN010 :
+        return function(i, j) { return j % 3 == 0; };
+      case QRMaskPattern.PATTERN011 :
+        return function(i, j) { return (i + j) % 3 == 0; };
+      case QRMaskPattern.PATTERN100 :
+        return function(i, j) { return (Math.floor(i / 2) + Math.floor(j / 3) ) % 2 == 0; };
+      case QRMaskPattern.PATTERN101 :
+        return function(i, j) { return (i * j) % 2 + (i * j) % 3 == 0; };
+      case QRMaskPattern.PATTERN110 :
+        return function(i, j) { return ( (i * j) % 2 + (i * j) % 3) % 2 == 0; };
+      case QRMaskPattern.PATTERN111 :
+        return function(i, j) { return ( (i * j) % 3 + (i + j) % 2) % 2 == 0; };
+
+      default :
+        throw 'bad maskPattern:' + maskPattern;
+      }
+    };
+
+    _this.getErrorCorrectPolynomial = function(errorCorrectLength) {
+      var a = qrPolynomial([1], 0);
+      for (var i = 0; i < errorCorrectLength; i += 1) {
+        a = a.multiply(qrPolynomial([1, QRMath.gexp(i)], 0) );
+      }
+      return a;
+    };
+
+    _this.getLengthInBits = function(mode, type) {
+
+      if (1 <= type && type < 10) {
+
+        // 1 - 9
+
+        switch(mode) {
+        case QRMode.MODE_NUMBER    : return 10;
+        case QRMode.MODE_ALPHA_NUM : return 9;
+        case QRMode.MODE_8BIT_BYTE : return 8;
+        case QRMode.MODE_KANJI     : return 8;
+        default :
+          throw 'mode:' + mode;
+        }
+
+      } else if (type < 27) {
+
+        // 10 - 26
+
+        switch(mode) {
+        case QRMode.MODE_NUMBER    : return 12;
+        case QRMode.MODE_ALPHA_NUM : return 11;
+        case QRMode.MODE_8BIT_BYTE : return 16;
+        case QRMode.MODE_KANJI     : return 10;
+        default :
+          throw 'mode:' + mode;
+        }
+
+      } else if (type < 41) {
+
+        // 27 - 40
+
+        switch(mode) {
+        case QRMode.MODE_NUMBER    : return 14;
+        case QRMode.MODE_ALPHA_NUM : return 13;
+        case QRMode.MODE_8BIT_BYTE : return 16;
+        case QRMode.MODE_KANJI     : return 12;
+        default :
+          throw 'mode:' + mode;
+        }
+
+      } else {
+        throw 'type:' + type;
+      }
+    };
+
+    _this.getLostPoint = function(qrcode) {
+
+      var moduleCount = qrcode.getModuleCount();
+
+      var lostPoint = 0;
+
+      // LEVEL1
+
+      for (var row = 0; row < moduleCount; row += 1) {
+        for (var col = 0; col < moduleCount; col += 1) {
+
+          var sameCount = 0;
+          var dark = qrcode.isDark(row, col);
+
+          for (var r = -1; r <= 1; r += 1) {
+
+            if (row + r < 0 || moduleCount <= row + r) {
+              continue;
+            }
+
+            for (var c = -1; c <= 1; c += 1) {
+
+              if (col + c < 0 || moduleCount <= col + c) {
+                continue;
+              }
+
+              if (r == 0 && c == 0) {
+                continue;
+              }
+
+              if (dark == qrcode.isDark(row + r, col + c) ) {
+                sameCount += 1;
+              }
+            }
+          }
+
+          if (sameCount > 5) {
+            lostPoint += (3 + sameCount - 5);
+          }
+        }
+      };
+
+      // LEVEL2
+
+      for (var row = 0; row < moduleCount - 1; row += 1) {
+        for (var col = 0; col < moduleCount - 1; col += 1) {
+          var count = 0;
+          if (qrcode.isDark(row, col) ) count += 1;
+          if (qrcode.isDark(row + 1, col) ) count += 1;
+          if (qrcode.isDark(row, col + 1) ) count += 1;
+          if (qrcode.isDark(row + 1, col + 1) ) count += 1;
+          if (count == 0 || count == 4) {
+            lostPoint += 3;
+          }
+        }
+      }
+
+      // LEVEL3
+
+      for (var row = 0; row < moduleCount; row += 1) {
+        for (var col = 0; col < moduleCount - 6; col += 1) {
+          if (qrcode.isDark(row, col)
+              && !qrcode.isDark(row, col + 1)
+              &&  qrcode.isDark(row, col + 2)
+              &&  qrcode.isDark(row, col + 3)
+              &&  qrcode.isDark(row, col + 4)
+              && !qrcode.isDark(row, col + 5)
+              &&  qrcode.isDark(row, col + 6) ) {
+            lostPoint += 40;
+          }
+        }
+      }
+
+      for (var col = 0; col < moduleCount; col += 1) {
+        for (var row = 0; row < moduleCount - 6; row += 1) {
+          if (qrcode.isDark(row, col)
+              && !qrcode.isDark(row + 1, col)
+              &&  qrcode.isDark(row + 2, col)
+              &&  qrcode.isDark(row + 3, col)
+              &&  qrcode.isDark(row + 4, col)
+              && !qrcode.isDark(row + 5, col)
+              &&  qrcode.isDark(row + 6, col) ) {
+            lostPoint += 40;
+          }
+        }
+      }
+
+      // LEVEL4
+
+      var darkCount = 0;
+
+      for (var col = 0; col < moduleCount; col += 1) {
+        for (var row = 0; row < moduleCount; row += 1) {
+          if (qrcode.isDark(row, col) ) {
+            darkCount += 1;
+          }
+        }
+      }
+
+      var ratio = Math.abs(100 * darkCount / moduleCount / moduleCount - 50) / 5;
+      lostPoint += ratio * 10;
+
+      return lostPoint;
+    };
+
+    return _this;
+  }();
+
+  //---------------------------------------------------------------------
+  // QRMath
+  //---------------------------------------------------------------------
+
+  var QRMath = function() {
+
+    var EXP_TABLE = new Array(256);
+    var LOG_TABLE = new Array(256);
+
+    // initialize tables
+    for (var i = 0; i < 8; i += 1) {
+      EXP_TABLE[i] = 1 << i;
+    }
+    for (var i = 8; i < 256; i += 1) {
+      EXP_TABLE[i] = EXP_TABLE[i - 4]
+        ^ EXP_TABLE[i - 5]
+        ^ EXP_TABLE[i - 6]
+        ^ EXP_TABLE[i - 8];
+    }
+    for (var i = 0; i < 255; i += 1) {
+      LOG_TABLE[EXP_TABLE[i] ] = i;
+    }
+
+    var _this = {};
+
+    _this.glog = function(n) {
+
+      if (n < 1) {
+        throw 'glog(' + n + ')';
+      }
+
+      return LOG_TABLE[n];
+    };
+
+    _this.gexp = function(n) {
+
+      while (n < 0) {
+        n += 255;
+      }
+
+      while (n >= 256) {
+        n -= 255;
+      }
+
+      return EXP_TABLE[n];
+    };
+
+    return _this;
+  }();
+
+  //---------------------------------------------------------------------
+  // qrPolynomial
+  //---------------------------------------------------------------------
+
+  function qrPolynomial(num, shift) {
+
+    if (typeof num.length == 'undefined') {
+      throw num.length + '/' + shift;
+    }
+
+    var _num = function() {
+      var offset = 0;
+      while (offset < num.length && num[offset] == 0) {
+        offset += 1;
+      }
+      var _num = new Array(num.length - offset + shift);
+      for (var i = 0; i < num.length - offset; i += 1) {
+        _num[i] = num[i + offset];
+      }
+      return _num;
+    }();
+
+    var _this = {};
+
+    _this.getAt = function(index) {
+      return _num[index];
+    };
+
+    _this.getLength = function() {
+      return _num.length;
+    };
+
+    _this.multiply = function(e) {
+
+      var num = new Array(_this.getLength() + e.getLength() - 1);
+
+      for (var i = 0; i < _this.getLength(); i += 1) {
+        for (var j = 0; j < e.getLength(); j += 1) {
+          num[i + j] ^= QRMath.gexp(QRMath.glog(_this.getAt(i) ) + QRMath.glog(e.getAt(j) ) );
+        }
+      }
+
+      return qrPolynomial(num, 0);
+    };
+
+    _this.mod = function(e) {
+
+      if (_this.getLength() - e.getLength() < 0) {
+        return _this;
+      }
+
+      var ratio = QRMath.glog(_this.getAt(0) ) - QRMath.glog(e.getAt(0) );
+
+      var num = new Array(_this.getLength() );
+      for (var i = 0; i < _this.getLength(); i += 1) {
+        num[i] = _this.getAt(i);
+      }
+
+      for (var i = 0; i < e.getLength(); i += 1) {
+        num[i] ^= QRMath.gexp(QRMath.glog(e.getAt(i) ) + ratio);
+      }
+
+      // recursive call
+      return qrPolynomial(num, 0).mod(e);
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // QRRSBlock
+  //---------------------------------------------------------------------
+
+  var QRRSBlock = function() {
+
+    var RS_BLOCK_TABLE = [
+
+      // L
+      // M
+      // Q
+      // H
+
+      // 1
+      [1, 26, 19],
+      [1, 26, 16],
+      [1, 26, 13],
+      [1, 26, 9],
+
+      // 2
+      [1, 44, 34],
+      [1, 44, 28],
+      [1, 44, 22],
+      [1, 44, 16],
+
+      // 3
+      [1, 70, 55],
+      [1, 70, 44],
+      [2, 35, 17],
+      [2, 35, 13],
+
+      // 4
+      [1, 100, 80],
+      [2, 50, 32],
+      [2, 50, 24],
+      [4, 25, 9],
+
+      // 5
+      [1, 134, 108],
+      [2, 67, 43],
+      [2, 33, 15, 2, 34, 16],
+      [2, 33, 11, 2, 34, 12],
+
+      // 6
+      [2, 86, 68],
+      [4, 43, 27],
+      [4, 43, 19],
+      [4, 43, 15],
+
+      // 7
+      [2, 98, 78],
+      [4, 49, 31],
+      [2, 32, 14, 4, 33, 15],
+      [4, 39, 13, 1, 40, 14],
+
+      // 8
+      [2, 121, 97],
+      [2, 60, 38, 2, 61, 39],
+      [4, 40, 18, 2, 41, 19],
+      [4, 40, 14, 2, 41, 15],
+
+      // 9
+      [2, 146, 116],
+      [3, 58, 36, 2, 59, 37],
+      [4, 36, 16, 4, 37, 17],
+      [4, 36, 12, 4, 37, 13],
+
+      // 10
+      [2, 86, 68, 2, 87, 69],
+      [4, 69, 43, 1, 70, 44],
+      [6, 43, 19, 2, 44, 20],
+      [6, 43, 15, 2, 44, 16],
+
+      // 11
+      [4, 101, 81],
+      [1, 80, 50, 4, 81, 51],
+      [4, 50, 22, 4, 51, 23],
+      [3, 36, 12, 8, 37, 13],
+
+      // 12
+      [2, 116, 92, 2, 117, 93],
+      [6, 58, 36, 2, 59, 37],
+      [4, 46, 20, 6, 47, 21],
+      [7, 42, 14, 4, 43, 15],
+
+      // 13
+      [4, 133, 107],
+      [8, 59, 37, 1, 60, 38],
+      [8, 44, 20, 4, 45, 21],
+      [12, 33, 11, 4, 34, 12],
+
+      // 14
+      [3, 145, 115, 1, 146, 116],
+      [4, 64, 40, 5, 65, 41],
+      [11, 36, 16, 5, 37, 17],
+      [11, 36, 12, 5, 37, 13],
+
+      // 15
+      [5, 109, 87, 1, 110, 88],
+      [5, 65, 41, 5, 66, 42],
+      [5, 54, 24, 7, 55, 25],
+      [11, 36, 12, 7, 37, 13],
+
+      // 16
+      [5, 122, 98, 1, 123, 99],
+      [7, 73, 45, 3, 74, 46],
+      [15, 43, 19, 2, 44, 20],
+      [3, 45, 15, 13, 46, 16],
+
+      // 17
+      [1, 135, 107, 5, 136, 108],
+      [10, 74, 46, 1, 75, 47],
+      [1, 50, 22, 15, 51, 23],
+      [2, 42, 14, 17, 43, 15],
+
+      // 18
+      [5, 150, 120, 1, 151, 121],
+      [9, 69, 43, 4, 70, 44],
+      [17, 50, 22, 1, 51, 23],
+      [2, 42, 14, 19, 43, 15],
+
+      // 19
+      [3, 141, 113, 4, 142, 114],
+      [3, 70, 44, 11, 71, 45],
+      [17, 47, 21, 4, 48, 22],
+      [9, 39, 13, 16, 40, 14],
+
+      // 20
+      [3, 135, 107, 5, 136, 108],
+      [3, 67, 41, 13, 68, 42],
+      [15, 54, 24, 5, 55, 25],
+      [15, 43, 15, 10, 44, 16],
+
+      // 21
+      [4, 144, 116, 4, 145, 117],
+      [17, 68, 42],
+      [17, 50, 22, 6, 51, 23],
+      [19, 46, 16, 6, 47, 17],
+
+      // 22
+      [2, 139, 111, 7, 140, 112],
+      [17, 74, 46],
+      [7, 54, 24, 16, 55, 25],
+      [34, 37, 13],
+
+      // 23
+      [4, 151, 121, 5, 152, 122],
+      [4, 75, 47, 14, 76, 48],
+      [11, 54, 24, 14, 55, 25],
+      [16, 45, 15, 14, 46, 16],
+
+      // 24
+      [6, 147, 117, 4, 148, 118],
+      [6, 73, 45, 14, 74, 46],
+      [11, 54, 24, 16, 55, 25],
+      [30, 46, 16, 2, 47, 17],
+
+      // 25
+      [8, 132, 106, 4, 133, 107],
+      [8, 75, 47, 13, 76, 48],
+      [7, 54, 24, 22, 55, 25],
+      [22, 45, 15, 13, 46, 16],
+
+      // 26
+      [10, 142, 114, 2, 143, 115],
+      [19, 74, 46, 4, 75, 47],
+      [28, 50, 22, 6, 51, 23],
+      [33, 46, 16, 4, 47, 17],
+
+      // 27
+      [8, 152, 122, 4, 153, 123],
+      [22, 73, 45, 3, 74, 46],
+      [8, 53, 23, 26, 54, 24],
+      [12, 45, 15, 28, 46, 16],
+
+      // 28
+      [3, 147, 117, 10, 148, 118],
+      [3, 73, 45, 23, 74, 46],
+      [4, 54, 24, 31, 55, 25],
+      [11, 45, 15, 31, 46, 16],
+
+      // 29
+      [7, 146, 116, 7, 147, 117],
+      [21, 73, 45, 7, 74, 46],
+      [1, 53, 23, 37, 54, 24],
+      [19, 45, 15, 26, 46, 16],
+
+      // 30
+      [5, 145, 115, 10, 146, 116],
+      [19, 75, 47, 10, 76, 48],
+      [15, 54, 24, 25, 55, 25],
+      [23, 45, 15, 25, 46, 16],
+
+      // 31
+      [13, 145, 115, 3, 146, 116],
+      [2, 74, 46, 29, 75, 47],
+      [42, 54, 24, 1, 55, 25],
+      [23, 45, 15, 28, 46, 16],
+
+      // 32
+      [17, 145, 115],
+      [10, 74, 46, 23, 75, 47],
+      [10, 54, 24, 35, 55, 25],
+      [19, 45, 15, 35, 46, 16],
+
+      // 33
+      [17, 145, 115, 1, 146, 116],
+      [14, 74, 46, 21, 75, 47],
+      [29, 54, 24, 19, 55, 25],
+      [11, 45, 15, 46, 46, 16],
+
+      // 34
+      [13, 145, 115, 6, 146, 116],
+      [14, 74, 46, 23, 75, 47],
+      [44, 54, 24, 7, 55, 25],
+      [59, 46, 16, 1, 47, 17],
+
+      // 35
+      [12, 151, 121, 7, 152, 122],
+      [12, 75, 47, 26, 76, 48],
+      [39, 54, 24, 14, 55, 25],
+      [22, 45, 15, 41, 46, 16],
+
+      // 36
+      [6, 151, 121, 14, 152, 122],
+      [6, 75, 47, 34, 76, 48],
+      [46, 54, 24, 10, 55, 25],
+      [2, 45, 15, 64, 46, 16],
+
+      // 37
+      [17, 152, 122, 4, 153, 123],
+      [29, 74, 46, 14, 75, 47],
+      [49, 54, 24, 10, 55, 25],
+      [24, 45, 15, 46, 46, 16],
+
+      // 38
+      [4, 152, 122, 18, 153, 123],
+      [13, 74, 46, 32, 75, 47],
+      [48, 54, 24, 14, 55, 25],
+      [42, 45, 15, 32, 46, 16],
+
+      // 39
+      [20, 147, 117, 4, 148, 118],
+      [40, 75, 47, 7, 76, 48],
+      [43, 54, 24, 22, 55, 25],
+      [10, 45, 15, 67, 46, 16],
+
+      // 40
+      [19, 148, 118, 6, 149, 119],
+      [18, 75, 47, 31, 76, 48],
+      [34, 54, 24, 34, 55, 25],
+      [20, 45, 15, 61, 46, 16]
+    ];
+
+    var qrRSBlock = function(totalCount, dataCount) {
+      var _this = {};
+      _this.totalCount = totalCount;
+      _this.dataCount = dataCount;
+      return _this;
+    };
+
+    var _this = {};
+
+    var getRsBlockTable = function(typeNumber, errorCorrectionLevel) {
+
+      switch(errorCorrectionLevel) {
+      case QRErrorCorrectionLevel.L :
+        return RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 0];
+      case QRErrorCorrectionLevel.M :
+        return RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 1];
+      case QRErrorCorrectionLevel.Q :
+        return RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 2];
+      case QRErrorCorrectionLevel.H :
+        return RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 3];
+      default :
+        return undefined;
+      }
+    };
+
+    _this.getRSBlocks = function(typeNumber, errorCorrectionLevel) {
+
+      var rsBlock = getRsBlockTable(typeNumber, errorCorrectionLevel);
+
+      if (typeof rsBlock == 'undefined') {
+        throw 'bad rs block @ typeNumber:' + typeNumber +
+            '/errorCorrectionLevel:' + errorCorrectionLevel;
+      }
+
+      var length = rsBlock.length / 3;
+
+      var list = [];
+
+      for (var i = 0; i < length; i += 1) {
+
+        var count = rsBlock[i * 3 + 0];
+        var totalCount = rsBlock[i * 3 + 1];
+        var dataCount = rsBlock[i * 3 + 2];
+
+        for (var j = 0; j < count; j += 1) {
+          list.push(qrRSBlock(totalCount, dataCount) );
+        }
+      }
+
+      return list;
+    };
+
+    return _this;
+  }();
+
+  //---------------------------------------------------------------------
+  // qrBitBuffer
+  //---------------------------------------------------------------------
+
+  var qrBitBuffer = function() {
+
+    var _buffer = [];
+    var _length = 0;
+
+    var _this = {};
+
+    _this.getBuffer = function() {
+      return _buffer;
+    };
+
+    _this.getAt = function(index) {
+      var bufIndex = Math.floor(index / 8);
+      return ( (_buffer[bufIndex] >>> (7 - index % 8) ) & 1) == 1;
+    };
+
+    _this.put = function(num, length) {
+      for (var i = 0; i < length; i += 1) {
+        _this.putBit( ( (num >>> (length - i - 1) ) & 1) == 1);
+      }
+    };
+
+    _this.getLengthInBits = function() {
+      return _length;
+    };
+
+    _this.putBit = function(bit) {
+
+      var bufIndex = Math.floor(_length / 8);
+      if (_buffer.length <= bufIndex) {
+        _buffer.push(0);
+      }
+
+      if (bit) {
+        _buffer[bufIndex] |= (0x80 >>> (_length % 8) );
+      }
+
+      _length += 1;
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // qrNumber
+  //---------------------------------------------------------------------
+
+  var qrNumber = function(data) {
+
+    var _mode = QRMode.MODE_NUMBER;
+    var _data = data;
+
+    var _this = {};
+
+    _this.getMode = function() {
+      return _mode;
+    };
+
+    _this.getLength = function(buffer) {
+      return _data.length;
+    };
+
+    _this.write = function(buffer) {
+
+      var data = _data;
+
+      var i = 0;
+
+      while (i + 2 < data.length) {
+        buffer.put(strToNum(data.substring(i, i + 3) ), 10);
+        i += 3;
+      }
+
+      if (i < data.length) {
+        if (data.length - i == 1) {
+          buffer.put(strToNum(data.substring(i, i + 1) ), 4);
+        } else if (data.length - i == 2) {
+          buffer.put(strToNum(data.substring(i, i + 2) ), 7);
+        }
+      }
+    };
+
+    var strToNum = function(s) {
+      var num = 0;
+      for (var i = 0; i < s.length; i += 1) {
+        num = num * 10 + chatToNum(s.charAt(i) );
+      }
+      return num;
+    };
+
+    var chatToNum = function(c) {
+      if ('0' <= c && c <= '9') {
+        return c.charCodeAt(0) - '0'.charCodeAt(0);
+      }
+      throw 'illegal char :' + c;
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // qrAlphaNum
+  //---------------------------------------------------------------------
+
+  var qrAlphaNum = function(data) {
+
+    var _mode = QRMode.MODE_ALPHA_NUM;
+    var _data = data;
+
+    var _this = {};
+
+    _this.getMode = function() {
+      return _mode;
+    };
+
+    _this.getLength = function(buffer) {
+      return _data.length;
+    };
+
+    _this.write = function(buffer) {
+
+      var s = _data;
+
+      var i = 0;
+
+      while (i + 1 < s.length) {
+        buffer.put(
+          getCode(s.charAt(i) ) * 45 +
+          getCode(s.charAt(i + 1) ), 11);
+        i += 2;
+      }
+
+      if (i < s.length) {
+        buffer.put(getCode(s.charAt(i) ), 6);
+      }
+    };
+
+    var getCode = function(c) {
+
+      if ('0' <= c && c <= '9') {
+        return c.charCodeAt(0) - '0'.charCodeAt(0);
+      } else if ('A' <= c && c <= 'Z') {
+        return c.charCodeAt(0) - 'A'.charCodeAt(0) + 10;
+      } else {
+        switch (c) {
+        case ' ' : return 36;
+        case '$' : return 37;
+        case '%' : return 38;
+        case '*' : return 39;
+        case '+' : return 40;
+        case '-' : return 41;
+        case '.' : return 42;
+        case '/' : return 43;
+        case ':' : return 44;
+        default :
+          throw 'illegal char :' + c;
+        }
+      }
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // qr8BitByte
+  //---------------------------------------------------------------------
+
+  var qr8BitByte = function(data) {
+
+    var _mode = QRMode.MODE_8BIT_BYTE;
+    var _data = data;
+    var _bytes = qrcode.stringToBytes(data);
+
+    var _this = {};
+
+    _this.getMode = function() {
+      return _mode;
+    };
+
+    _this.getLength = function(buffer) {
+      return _bytes.length;
+    };
+
+    _this.write = function(buffer) {
+      for (var i = 0; i < _bytes.length; i += 1) {
+        buffer.put(_bytes[i], 8);
+      }
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // qrKanji
+  //---------------------------------------------------------------------
+
+  var qrKanji = function(data) {
+
+    var _mode = QRMode.MODE_KANJI;
+    var _data = data;
+
+    var stringToBytes = qrcode.stringToBytesFuncs['SJIS'];
+    if (!stringToBytes) {
+      throw 'sjis not supported.';
+    }
+    !function(c, code) {
+      // self test for sjis support.
+      var test = stringToBytes(c);
+      if (test.length != 2 || ( (test[0] << 8) | test[1]) != code) {
+        throw 'sjis not supported.';
+      }
+    }('\u53cb', 0x9746);
+
+    var _bytes = stringToBytes(data);
+
+    var _this = {};
+
+    _this.getMode = function() {
+      return _mode;
+    };
+
+    _this.getLength = function(buffer) {
+      return ~~(_bytes.length / 2);
+    };
+
+    _this.write = function(buffer) {
+
+      var data = _bytes;
+
+      var i = 0;
+
+      while (i + 1 < data.length) {
+
+        var c = ( (0xff & data[i]) << 8) | (0xff & data[i + 1]);
+
+        if (0x8140 <= c && c <= 0x9FFC) {
+          c -= 0x8140;
+        } else if (0xE040 <= c && c <= 0xEBBF) {
+          c -= 0xC140;
+        } else {
+          throw 'illegal char at ' + (i + 1) + '/' + c;
+        }
+
+        c = ( (c >>> 8) & 0xff) * 0xC0 + (c & 0xff);
+
+        buffer.put(c, 13);
+
+        i += 2;
+      }
+
+      if (i < data.length) {
+        throw 'illegal char at ' + (i + 1);
+      }
+    };
+
+    return _this;
+  };
+
+  //=====================================================================
+  // GIF Support etc.
+  //
+
+  //---------------------------------------------------------------------
+  // byteArrayOutputStream
+  //---------------------------------------------------------------------
+
+  var byteArrayOutputStream = function() {
+
+    var _bytes = [];
+
+    var _this = {};
+
+    _this.writeByte = function(b) {
+      _bytes.push(b & 0xff);
+    };
+
+    _this.writeShort = function(i) {
+      _this.writeByte(i);
+      _this.writeByte(i >>> 8);
+    };
+
+    _this.writeBytes = function(b, off, len) {
+      off = off || 0;
+      len = len || b.length;
+      for (var i = 0; i < len; i += 1) {
+        _this.writeByte(b[i + off]);
+      }
+    };
+
+    _this.writeString = function(s) {
+      for (var i = 0; i < s.length; i += 1) {
+        _this.writeByte(s.charCodeAt(i) );
+      }
+    };
+
+    _this.toByteArray = function() {
+      return _bytes;
+    };
+
+    _this.toString = function() {
+      var s = '';
+      s += '[';
+      for (var i = 0; i < _bytes.length; i += 1) {
+        if (i > 0) {
+          s += ',';
+        }
+        s += _bytes[i];
+      }
+      s += ']';
+      return s;
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // base64EncodeOutputStream
+  //---------------------------------------------------------------------
+
+  var base64EncodeOutputStream = function() {
+
+    var _buffer = 0;
+    var _buflen = 0;
+    var _length = 0;
+    var _base64 = '';
+
+    var _this = {};
+
+    var writeEncoded = function(b) {
+      _base64 += String.fromCharCode(encode(b & 0x3f) );
+    };
+
+    var encode = function(n) {
+      if (n < 0) {
+        // error.
+      } else if (n < 26) {
+        return 0x41 + n;
+      } else if (n < 52) {
+        return 0x61 + (n - 26);
+      } else if (n < 62) {
+        return 0x30 + (n - 52);
+      } else if (n == 62) {
+        return 0x2b;
+      } else if (n == 63) {
+        return 0x2f;
+      }
+      throw 'n:' + n;
+    };
+
+    _this.writeByte = function(n) {
+
+      _buffer = (_buffer << 8) | (n & 0xff);
+      _buflen += 8;
+      _length += 1;
+
+      while (_buflen >= 6) {
+        writeEncoded(_buffer >>> (_buflen - 6) );
+        _buflen -= 6;
+      }
+    };
+
+    _this.flush = function() {
+
+      if (_buflen > 0) {
+        writeEncoded(_buffer << (6 - _buflen) );
+        _buffer = 0;
+        _buflen = 0;
+      }
+
+      if (_length % 3 != 0) {
+        // padding
+        var padlen = 3 - _length % 3;
+        for (var i = 0; i < padlen; i += 1) {
+          _base64 += '=';
+        }
+      }
+    };
+
+    _this.toString = function() {
+      return _base64;
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // base64DecodeInputStream
+  //---------------------------------------------------------------------
+
+  var base64DecodeInputStream = function(str) {
+
+    var _str = str;
+    var _pos = 0;
+    var _buffer = 0;
+    var _buflen = 0;
+
+    var _this = {};
+
+    _this.read = function() {
+
+      while (_buflen < 8) {
+
+        if (_pos >= _str.length) {
+          if (_buflen == 0) {
+            return -1;
+          }
+          throw 'unexpected end of file./' + _buflen;
+        }
+
+        var c = _str.charAt(_pos);
+        _pos += 1;
+
+        if (c == '=') {
+          _buflen = 0;
+          return -1;
+        } else if (c.match(/^\s$/) ) {
+          // ignore if whitespace.
+          continue;
+        }
+
+        _buffer = (_buffer << 6) | decode(c.charCodeAt(0) );
+        _buflen += 6;
+      }
+
+      var n = (_buffer >>> (_buflen - 8) ) & 0xff;
+      _buflen -= 8;
+      return n;
+    };
+
+    var decode = function(c) {
+      if (0x41 <= c && c <= 0x5a) {
+        return c - 0x41;
+      } else if (0x61 <= c && c <= 0x7a) {
+        return c - 0x61 + 26;
+      } else if (0x30 <= c && c <= 0x39) {
+        return c - 0x30 + 52;
+      } else if (c == 0x2b) {
+        return 62;
+      } else if (c == 0x2f) {
+        return 63;
+      } else {
+        throw 'c:' + c;
+      }
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // gifImage (B/W)
+  //---------------------------------------------------------------------
+
+  var gifImage = function(width, height) {
+
+    var _width = width;
+    var _height = height;
+    var _data = new Array(width * height);
+
+    var _this = {};
+
+    _this.setPixel = function(x, y, pixel) {
+      _data[y * _width + x] = pixel;
+    };
+
+    _this.write = function(out) {
+
+      //---------------------------------
+      // GIF Signature
+
+      out.writeString('GIF87a');
+
+      //---------------------------------
+      // Screen Descriptor
+
+      out.writeShort(_width);
+      out.writeShort(_height);
+
+      out.writeByte(0x80); // 2bit
+      out.writeByte(0);
+      out.writeByte(0);
+
+      //---------------------------------
+      // Global Color Map
+
+      // black
+      out.writeByte(0x00);
+      out.writeByte(0x00);
+      out.writeByte(0x00);
+
+      // white
+      out.writeByte(0xff);
+      out.writeByte(0xff);
+      out.writeByte(0xff);
+
+      //---------------------------------
+      // Image Descriptor
+
+      out.writeString(',');
+      out.writeShort(0);
+      out.writeShort(0);
+      out.writeShort(_width);
+      out.writeShort(_height);
+      out.writeByte(0);
+
+      //---------------------------------
+      // Local Color Map
+
+      //---------------------------------
+      // Raster Data
+
+      var lzwMinCodeSize = 2;
+      var raster = getLZWRaster(lzwMinCodeSize);
+
+      out.writeByte(lzwMinCodeSize);
+
+      var offset = 0;
+
+      while (raster.length - offset > 255) {
+        out.writeByte(255);
+        out.writeBytes(raster, offset, 255);
+        offset += 255;
+      }
+
+      out.writeByte(raster.length - offset);
+      out.writeBytes(raster, offset, raster.length - offset);
+      out.writeByte(0x00);
+
+      //---------------------------------
+      // GIF Terminator
+      out.writeString(';');
+    };
+
+    var bitOutputStream = function(out) {
+
+      var _out = out;
+      var _bitLength = 0;
+      var _bitBuffer = 0;
+
+      var _this = {};
+
+      _this.write = function(data, length) {
+
+        if ( (data >>> length) != 0) {
+          throw 'length over';
+        }
+
+        while (_bitLength + length >= 8) {
+          _out.writeByte(0xff & ( (data << _bitLength) | _bitBuffer) );
+          length -= (8 - _bitLength);
+          data >>>= (8 - _bitLength);
+          _bitBuffer = 0;
+          _bitLength = 0;
+        }
+
+        _bitBuffer = (data << _bitLength) | _bitBuffer;
+        _bitLength = _bitLength + length;
+      };
+
+      _this.flush = function() {
+        if (_bitLength > 0) {
+          _out.writeByte(_bitBuffer);
+        }
+      };
+
+      return _this;
+    };
+
+    var getLZWRaster = function(lzwMinCodeSize) {
+
+      var clearCode = 1 << lzwMinCodeSize;
+      var endCode = (1 << lzwMinCodeSize) + 1;
+      var bitLength = lzwMinCodeSize + 1;
+
+      // Setup LZWTable
+      var table = lzwTable();
+
+      for (var i = 0; i < clearCode; i += 1) {
+        table.add(String.fromCharCode(i) );
+      }
+      table.add(String.fromCharCode(clearCode) );
+      table.add(String.fromCharCode(endCode) );
+
+      var byteOut = byteArrayOutputStream();
+      var bitOut = bitOutputStream(byteOut);
+
+      // clear code
+      bitOut.write(clearCode, bitLength);
+
+      var dataIndex = 0;
+
+      var s = String.fromCharCode(_data[dataIndex]);
+      dataIndex += 1;
+
+      while (dataIndex < _data.length) {
+
+        var c = String.fromCharCode(_data[dataIndex]);
+        dataIndex += 1;
+
+        if (table.contains(s + c) ) {
+
+          s = s + c;
+
+        } else {
+
+          bitOut.write(table.indexOf(s), bitLength);
+
+          if (table.size() < 0xfff) {
+
+            if (table.size() == (1 << bitLength) ) {
+              bitLength += 1;
+            }
+
+            table.add(s + c);
+          }
+
+          s = c;
+        }
+      }
+
+      bitOut.write(table.indexOf(s), bitLength);
+
+      // end code
+      bitOut.write(endCode, bitLength);
+
+      bitOut.flush();
+
+      return byteOut.toByteArray();
+    };
+
+    var lzwTable = function() {
+
+      var _map = {};
+      var _size = 0;
+
+      var _this = {};
+
+      _this.add = function(key) {
+        if (_this.contains(key) ) {
+          throw 'dup key:' + key;
+        }
+        _map[key] = _size;
+        _size += 1;
+      };
+
+      _this.size = function() {
+        return _size;
+      };
+
+      _this.indexOf = function(key) {
+        return _map[key];
+      };
+
+      _this.contains = function(key) {
+        return typeof _map[key] != 'undefined';
+      };
+
+      return _this;
+    };
+
+    return _this;
+  };
+
+  var createDataURL = function(width, height, getPixel) {
+    var gif = gifImage(width, height);
+    for (var y = 0; y < height; y += 1) {
+      for (var x = 0; x < width; x += 1) {
+        gif.setPixel(x, y, getPixel(x, y) );
+      }
+    }
+
+    var b = byteArrayOutputStream();
+    gif.write(b);
+
+    var base64 = base64EncodeOutputStream();
+    var bytes = b.toByteArray();
+    for (var i = 0; i < bytes.length; i += 1) {
+      base64.writeByte(bytes[i]);
+    }
+    base64.flush();
+
+    return 'data:image/gif;base64,' + base64;
+  };
+
+  //---------------------------------------------------------------------
+  // returns qrcode function.
+
+  return qrcode;
+}();
+
+// multibyte support
+!function() {
+
+  qrcode.stringToBytesFuncs['UTF-8'] = function(s) {
+    // http://stackoverflow.com/questions/18729405/how-to-convert-utf8-string-to-byte-array
+    function toUTF8Array(str) {
+      var utf8 = [];
+      for (var i=0; i < str.length; i++) {
+        var charcode = str.charCodeAt(i);
+        if (charcode < 0x80) utf8.push(charcode);
+        else if (charcode < 0x800) {
+          utf8.push(0xc0 | (charcode >> 6),
+              0x80 | (charcode & 0x3f));
+        }
+        else if (charcode < 0xd800 || charcode >= 0xe000) {
+          utf8.push(0xe0 | (charcode >> 12),
+              0x80 | ((charcode>>6) & 0x3f),
+              0x80 | (charcode & 0x3f));
+        }
+        // surrogate pair
+        else {
+          i++;
+          // UTF-16 encodes 0x10000-0x10FFFF by
+          // subtracting 0x10000 and splitting the
+          // 20 bits of 0x0-0xFFFFF into two halves
+          charcode = 0x10000 + (((charcode & 0x3ff)<<10)
+            | (str.charCodeAt(i) & 0x3ff));
+          utf8.push(0xf0 | (charcode >>18),
+              0x80 | ((charcode>>12) & 0x3f),
+              0x80 | ((charcode>>6) & 0x3f),
+              0x80 | (charcode & 0x3f));
+        }
+      }
+      return utf8;
+    }
+    return toUTF8Array(s);
+  };
+
+}();
+
+(function (factory) {
+  if (typeof define === 'function' && define.amd) {
+      define([], factory);
+  } else if (typeof exports === 'object') {
+      module.exports = factory();
+  }
+}(function () {
+    return qrcode;
+}));
+
+</script>
+<script>
+// ============================================================
+// Página de encomendas: fala com a planilha da loja (Apps Script).
+// Endereço: encomenda.html?s=ID_DO_SCRIPT  (pedido: &t=TOKEN)
+// ============================================================
+var Q = new URLSearchParams(location.search);
+var SCRIPT = Q.get('s') ? 'https://script.google.com/macros/s/' + Q.get('s').replace(/[^\w-]/g, '') + '/exec' : '';
+var TOKEN = (Q.get('t') || '').replace(/[^a-f0-9]/gi, '');
+var C = null;               // catálogo
+var carrinho = {};          // id -> qtd
+var saborKit = {};          // id do kit -> id do bolo escolhido
+var montados = [];          // bolos montados: { massa, recheios: [], kg }
+var MONT = { massa: '', recheios: [], frutas: [], kg: 0 };
+var esc_ = { data: '', horario: '', modo: 'retirada', forma: '' };
+var etapa = 1;
+var FOTO = null;   // { tipo, base64 } já reduzida no celular antes de enviar
+function lerFoto(inp) {
+  var f = inp.files && inp.files[0];
+  if (!f) return;
+  if (!/^image\//.test(f.type)) { alert('Escolha uma imagem.'); inp.value = ''; return; }
+  var img = new Image(), url = URL.createObjectURL(f);
+  img.onload = function () {
+    var max = 1600, w = img.width, h = img.height, k = Math.min(1, max / Math.max(w, h));
+    var cv = document.createElement('canvas'); cv.width = Math.round(w * k); cv.height = Math.round(h * k);
+    cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height);
+    var dataUrl = cv.toDataURL('image/jpeg', 0.82);
+    URL.revokeObjectURL(url);
+    FOTO = { tipo: 'image/jpeg', base64: dataUrl.split(',')[1] };
+    $('fotoImg').src = dataUrl; $('fotoPrev').classList.remove('oculto');
+  };
+  img.onerror = function () { alert('Não consegui abrir essa imagem. Tente outra (JPG ou PNG).'); inp.value = ''; };
+  img.src = url;
+}
+function tirarFoto() { FOTO = null; $('foto').value = ''; $('fotoPrev').classList.add('oculto'); }
+
+function $(id) { return document.getElementById(id); }
+function brl(v) { return (Number(v) || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+function num(v) { return String(Math.round(v * 100) / 100).replace('.', ','); }
+function dataLonga(iso) { var d = new Date(iso + 'T12:00:00'); return d.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: '2-digit' }); }
+function mostrarErro(id, m) { var e = $(id); e.textContent = m; e.classList.remove('oculto'); e.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+function limparErro(id) { $(id).classList.add('oculto'); }
+
+function api(fn, args) {
+  if (!SCRIPT) return Promise.reject(new Error('Link incompleto. Peça o link de encomendas para a loja.'));
+  return fetch(SCRIPT, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ loja: fn, args: args || [] }) })
+    .then(function (r) { return r.text(); })
+    .then(function (t) { var j; try { j = JSON.parse(t); } catch (e) { throw new Error('A loja está fora do ar agora. Tente de novo em alguns minutos.'); } if (!j.ok) throw new Error(j.erro); return j.v; })
+    .catch(function (e) { throw new Error(e.message && e.message.indexOf('fetch') < 0 ? e.message : 'Sem conexão com a loja. Confira sua internet e tente de novo.'); });
+}
+
+// ── ETAPA 1: cardápio ──
+function iniciar() {
+  api('lojaCatalogo').then(function (c) {
+    C = c;
+    $('hLoja').textContent = '🎂 ' + c.loja;
+    document.title = 'Encomendas · ' + c.loja;
+    $('hSub').textContent = 'Escolha, marque a data e garanta seu pedido com ' + c.sinalPct + '% de sinal.';
+    $('carregando').classList.add('oculto');
+    if (!c.itens.length) { mostrarErro('erroGeral', 'O cardápio está sendo atualizado. Fale com a loja.'); return; }
+    montarFluxo();
+    irPasso(0);
+  }).catch(function (e) { $('carregando').classList.add('oculto'); mostrarErro('erroGeral', e.message); });
+}
+
+// ── PASSOS: tipo de bolo → bolos → docinhos → topo → data e dados → pagamento ──
+var TIPO = '';                                  // 'comum' | 'andar' | 'doces'
+var ANDAR = { kg: 0, baixo: '', cima: '' };     // bolo de andar
+var PESSOAS = 0;
+var MODO_BOLO = 'cardapio';                     // 'cardapio' (sabores prontos) | 'montar' (monte seu bolo)
+var FLUXO = [], passo = 0;
+var NOMES_PASSO = { tipo: 'Tipo de bolo', bolos: 'Bolo', doces: 'Docinhos', topo: 'Topo de bolo', dados: 'Data e seus dados', pagar: 'Resumo e pagamento' };
+function porTipo(t) { return C.itens.filter(function (x) { return x.tipo === t; }); }
+function kitsComBolo() { return C.itens.filter(function (x) { return x.tipo === 'Kit' && x.kitKg > 0; }).sort(function (a, b) { return a.kitKg - b.kitKg || a.preco - b.preco; }); }
+function kitsSemBolo() { return C.itens.filter(function (x) { return x.tipo === 'Kit' && !(x.kitKg > 0); }); }
+function montarFluxo() {
+  var f = ['tipo'];
+  if (TIPO !== 'doces') f.push('bolos');
+  if (porTipo('Produto').length || kitsSemBolo().length) f.push('doces');
+  if (TIPO !== 'doces' && porTipo('Adicional').length) f.push('topo');
+  FLUXO = f.concat(['dados', 'pagar']);
+}
+function chave() { return FLUXO[passo]; }
+function renderProgresso() {
+  $('progresso').innerHTML = '<div class="etapas">' + FLUXO.map(function (k, i) { return '<span' + (i <= passo ? ' class="on"' : '') + '></span>'; }).join('') + '</div>' +
+    '<div class="muted" style="margin:-6px 2px 4px;">Passo ' + (passo + 1) + ' de ' + FLUXO.length + ' · ' + NOMES_PASSO[chave()] + '</div>';
+}
+function irPasso(i) {
+  passo = i;
+  var k = chave(), cat = ['tipo', 'bolos', 'doces', 'topo'].indexOf(k) >= 0;
+  etapa = k === 'pagar' ? 3 : k === 'dados' ? 2 : 1;
+  $('e1').classList.toggle('oculto', !cat);
+  $('e2').classList.toggle('oculto', k !== 'dados');
+  $('e3').classList.toggle('oculto', k !== 'pagar');
+  $('barra').classList.remove('oculto');
+  $('progresso').classList.remove('oculto');
+  renderProgresso();
+  if (cat) renderPagina();
+  if (k === 'dados') renderEtapa2();
+  if (k === 'pagar') renderEtapa3();
+  atualizarBarra();
+  window.scrollTo(0, 0);
+}
+function renderPagina() {
+  var k = chave(), h = '';
+  if (k === 'tipo') h = pgTipo();
+  else if (k === 'bolos') h = TIPO === 'andar' ? pgAndar() : pgBolos();
+  else if (k === 'doces') h = pgDoces();
+  else if (k === 'topo') h = pgTopo();
+  $('catalogo').innerHTML = h;
+  if (k === 'bolos' && TIPO !== 'andar' && C.montagem) { MONT.kg = MONT.kg || C.montagem.min; renderMonte(); }
+  if (k === 'bolos' && TIPO === 'andar') renderAndar();
+}
+
+// ── ilustrações (mesma escala: dá para comparar os tamanhos) ──
+function corpoBolo(x, y, w, h, camadas) {
+  var rec = 5, cam = (h - rec * (camadas - 1)) / camadas, yy = y, cx = x + w / 2;
+  var out = '<ellipse cx="' + cx + '" cy="' + (y + h) + '" rx="' + (w / 2) + '" ry="7" fill="#EFD3A8"/>';
+  for (var i = 0; i < camadas; i++) {
+    out += '<rect x="' + x + '" y="' + yy.toFixed(1) + '" width="' + w + '" height="' + cam.toFixed(1) + '" fill="#EFD3A8"/>';
+    yy += cam;
+    if (i < camadas - 1) { out += '<rect x="' + x + '" y="' + yy.toFixed(1) + '" width="' + w + '" height="' + rec + '" fill="#8A5636"/>'; yy += rec; }
+  }
+  return out + '<ellipse cx="' + cx + '" cy="' + y + '" rx="' + (w / 2) + '" ry="7" fill="#FFF6EC" stroke="#E2CDB8"/>';
+}
+function svgBolo(w, h, camadas) {
+  return '<svg viewBox="0 0 160 150" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><ellipse cx="80" cy="133" rx="' + (w / 2 + 14) + '" ry="9" fill="#E3D8CD"/>' +
+    corpoBolo(80 - w / 2, 128 - h, w, h, camadas) + '</svg>';
+}
+function svgAndar() {
+  return '<svg viewBox="0 0 160 150" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><ellipse cx="80" cy="133" rx="70" ry="9" fill="#E3D8CD"/>' +
+    corpoBolo(25, 84, 110, 44, 2) + corpoBolo(46, 40, 68, 38, 2) + '</svg>';
+}
+
+// ── PASSO: tipo de bolo ──
+function opcaoGrande(on, fn, svg, titulo, sub) {
+  return '<div class="opcao grande' + (on ? ' on' : '') + '" onclick="' + fn + '"><div class="ilus">' + svg + '</div><div><b>' + titulo + '</b><div class="muted">' + sub + '</div></div></div>';
+}
+function pgTipo() {
+  return '<h2>🎂 Que tipo de bolo você quer?</h2>' +
+    opcaoGrande(TIPO === 'comum', "escolherTipo('comum')", svgBolo(110, 46, 2), 'Bolo comum',
+      'Um andar, com os sabores do cardápio' + (kitsComBolo().length ? ', kits festa' : '') + (C.montagem ? ' ou monte o seu' : '') + '.') +
+    opcaoGrande(TIPO === 'andar', "escolherTipo('andar')", svgAndar(), 'Bolo de andar',
+      'Dois andares, até 2 sabores (um em cada andar). A partir de ' + num(C.andar.min) + ' kg.') +
+    (porTipo('Produto').length ? '<button class="btn sec" style="margin-top:6px;" onclick="escolherTipo(\'doces\')">' + (TIPO === 'doces' ? '✓ ' : '') + 'Só quero docinhos, sem bolo</button>' : '');
+}
+function escolherTipo(t) {
+  if (t !== TIPO) {
+    var tira = function (f) {
+      Object.keys(carrinho).forEach(function (id) {
+        var it = C.itens.filter(function (x) { return x.id === id; })[0];
+        if (it && f(it)) { delete carrinho[id]; delete saborKit[id]; }
+      });
+    };
+    if (t !== 'comum') { tira(function (it) { return it.bolo || (it.tipo === 'Kit' && it.kitKg > 0); }); montados = []; MONT = { massa: '', recheios: [], frutas: [], kg: 0 }; MODO_BOLO = 'cardapio'; }
+    if (t !== 'andar') ANDAR = { kg: 0, baixo: '', cima: '' };
+    if (t === 'doces') tira(function (it) { return it.tipo === 'Adicional'; });
+    TIPO = t;
+  }
+  montarFluxo();
+  irPasso(1);
+}
+
+// ── PASSO: bolos (comum) ──
+function pgBolos() {
+  var og = ordenarGrupos(C.itens.filter(function (x) { return x.bolo; }), C.ordemCategorias), h = cardPessoas();
+  if (C.montagem) {
+    h += '<div class="modos-bolo">' +
+      '<button class="modo-bolo' + (MODO_BOLO === 'cardapio' ? ' on' : '') + '" onclick="modoBolo(\'cardapio\')">📋 Sabores do cardápio<small>bolos já montados pela confeitaria</small></button>' +
+      '<button class="modo-bolo' + (MODO_BOLO === 'montar' ? ' on' : '') + '" onclick="modoBolo(\'montar\')">🎨 Montar meu bolo<small>você escolhe massa e recheios</small></button></div>';
+    if (MODO_BOLO === 'montar') return h + htmlMonte() + resumoOutroModo();
+  }
+  h += og.ordem.map(function (g) { return '<h2>🎂 ' + esc(og.ordem.length > 1 ? g : 'Sabores (preço por kg)') + '</h2>' + og.grupos[g].map(htmlItem).join(''); }).join('');
+  if (C.montagem) h += resumoOutroModo();
+  if (kitsComBolo().length) h += '<h2>🎁 Kits festa</h2><div class="muted" style="margin:-4px 2px 10px;">Bolo e docinhos com preço fechado. Você escolhe o sabor do bolo.</div>' + kitsComBolo().map(htmlItem).join('');
+  return h;
+}
+function modoBolo(m) { MODO_BOLO = m; renderPagina(); atualizarBarra(); }
+// o que já está no pedido pelo outro caminho (para não parecer que sumiu)
+function resumoOutroModo() {
+  var L = itensEscolhidos();
+  if (MODO_BOLO === 'montar') {
+    var prontos = L.filter(function (x) { return x.kg > 0 && !x.montado; });
+    if (!prontos.length) return '';
+    return '<div class="muted" style="margin:10px 2px;">Também no pedido: ' + prontos.map(function (x) { return esc(x.rotulo) + ' ' + num(x.kg) + ' kg'; }).join(', ') + '. <a href="#" style="color:var(--azul);font-weight:700;" onclick="modoBolo(\'cardapio\');return false;">Ver sabores</a></div>';
+  }
+  if (!montados.length) return '';
+  return '<div class="card" style="margin-top:12px;"><b>🎨 Bolo' + (montados.length > 1 ? 's' : '') + ' que você montou</b>' + montados.map(function (m) {
+    return '<div class="muted" style="margin-top:4px;">✅ ' + num(m.kg) + ' kg · ' + esc(descMontado(m)) + '</div>'; }).join('') +
+    '<a href="#" style="display:inline-block;margin-top:6px;color:var(--azul);font-weight:700;font-size:13px;" onclick="modoBolo(\'montar\');return false;">Editar</a></div>';
+}
+function cardPessoas() {
+  return '<div class="card" style="margin-top:12px;"><b>🎉 Para quantas pessoas é a festa?</b><div style="display:flex;gap:8px;align-items:center;margin-top:8px;"><input id="pessoas" type="number" inputmode="numeric" min="1" placeholder="nº de pessoas" oninput="calcPessoas()" style="max-width:150px;" value="' + (PESSOAS || '') + '"></div>' +
+    '<div class="muted" id="pessoasRes" style="margin-top:6px;">' + textoPessoas() + '</div><div class="muted" style="margin-top:4px;">Cada 1 kg de bolo ' + fatiasTexto(null, 1) + ', em média.</div></div>';
+}
+function calcPessoas() { PESSOAS = parseInt($('pessoas').value, 10) || 0; $('pessoasRes').innerHTML = textoPessoas(); }
+function kgParaPessoas(n) { var min = TIPO === 'andar' ? C.andar.min : 1; return Math.max(min, Math.ceil(n / fx(null).min * 2) / 2); }
+function textoPessoas() {
+  var n = PESSOAS;
+  if (!(n > 0)) return '';
+  var kg = kgParaPessoas(n), h = 'Para ' + n + ' pessoa' + (n === 1 ? '' : 's') + ', sugerimos <b>' + num(kg) + ' kg</b> de bolo (' + fatiasTexto(null, kg) + ').';
+  if (TIPO === 'andar') h += ' <a href="#" style="color:var(--azul);font-weight:700;" onclick="usarKgAndar(' + kg + ');return false;">Usar ' + num(kg) + ' kg</a>';
+  else {
+    var kit = kitsComBolo().filter(function (k) { return k.kitKg * fx(null).min >= n; })[0];
+    if (kit) h += ' Ou o <b>' + esc(kit.nome) + '</b>, que já vem com docinhos.';
+  }
+  return h;
+}
+
+// ── PASSO: bolo de andar ──
+function pgAndar() { return '<h2>🎂 Bolo de andar</h2><div class="card" id="andar"></div>' + cardPessoas(); }
+function precoAndar() {
+  var b = boloPorId(ANDAR.baixo), c = boloPorId(ANDAR.cima);
+  return b && c ? Math.round((Math.max(b.preco, c.preco) + (C.andar.acrescimo || 0)) * 100) / 100 : 0;
+}
+function descAndar() {
+  var b = boloPorId(ANDAR.baixo), c = boloPorId(ANDAR.cima);
+  if (!b || !c) return '';
+  return b.id === c.id ? b.nome : 'baixo: ' + b.nome + ' · cima: ' + c.nome;
+}
+function renderAndar() {
+  if (!$('andar')) return;
+  var A = C.andar, bl = bolos(), pr = precoAndar();
+  if (!ANDAR.kg) ANDAR.kg = A.min;
+  var b = boloPorId(ANDAR.baixo), c = boloPorId(ANDAR.cima);
+  var chips = function (lado) {
+    return '<div class="chips">' + bl.map(function (x) {
+      return '<button class="chip' + (ANDAR[lado] === x.id ? ' on' : '') + '" onclick="saborAndar(\'' + lado + '\',\'' + x.id + '\')">' + esc(x.nome) + '<small>' + brl(x.preco) + '/kg</small></button>';
+    }).join('') + '</div>';
+  };
+  $('andar').innerHTML = '<div style="display:flex;gap:12px;align-items:center;"><div style="width:96px;flex-shrink:0;">' + svgAndar() + '</div>' +
+    '<div class="muted">Dois andares, com até 2 sabores: um para o andar de baixo e outro para o de cima (podem ser iguais). Peso mínimo de <b>' + num(A.min) + ' kg</b>. O bolo de andar não entra nas promoções de desconto.</div></div>' +
+    '<label>Peso total</label><div class="passo"><button onclick="kgAndar(-1)">−</button><span class="q">' + num(ANDAR.kg) + ' kg</span><button class="mais" onclick="kgAndar(1)">+</button>' +
+    '<span class="muted" style="margin-left:6px;">' + fatiasTexto(null, ANDAR.kg) + '</span></div>' +
+    '<label>Sabor do andar de baixo (o maior)</label>' + chips('baixo') +
+    '<label>Sabor do andar de cima</label>' + chips('cima') +
+    (pr ? '<div class="monte-tot">' + esc(descAndar()) + '<br><b>' + brl(pr) + '/kg · ' + num(ANDAR.kg) + ' kg = ' + brl(pr * ANDAR.kg) + '</b>' +
+      (b.preco !== c.preco ? '<div class="muted">Com sabores de preços diferentes, vale o preço por kg do mais caro.</div>' : '') +
+      (C.andar.acrescimo ? '<div class="muted">Inclui ' + brl(C.andar.acrescimo) + '/kg da montagem em andares.</div>' : '') + '</div>' : '');
+}
+function saborAndar(lado, id) { ANDAR[lado] = id; renderAndar(); atualizarBarra(); }
+function kgAndar(dir) { var A = C.andar; ANDAR.kg = Math.round(Math.min(Math.max(ANDAR.kg + dir * A.passo, A.min), A.max) * 100) / 100; renderAndar(); atualizarBarra(); }
+function usarKgAndar(kg) { ANDAR.kg = Math.min(Math.max(kg, C.andar.min), C.andar.max); renderAndar(); atualizarBarra(); }
+
+// ── PASSOS: docinhos e topo (dá para pular) ──
+function listaAgrupada(itens) {
+  var og = ordenarGrupos(itens, C.ordemCategorias);
+  return og.ordem.map(function (g) { return (og.ordem.length > 1 ? '<h3 class="subgrupo">' + esc(g) + '</h3>' : '') + og.grupos[g].map(htmlItem).join(''); }).join('');
+}
+function pgDoces() {
+  var itens = porTipo('Produto').concat(kitsSemBolo()), og = ordenarGrupos(itens, C.ordemCategorias);
+  var titulo = og.ordem.length === 1 ? og.ordem[0] : 'Docinhos';
+  return '<h2>🍬 ' + esc(titulo) + '</h2>' +
+    (TIPO === 'doces' ? '' : '<div class="muted" style="margin:-4px 2px 10px;">Quer docinhos para acompanhar o bolo? Se não quiser, é só tocar em <b>Pular</b>.</div>') +
+    cardSugestaoDoces() + listaAgrupada(itens);
+}
+// quantos docinhos combinam com o bolo do pedido: 3 por pessoa, em múltiplos do passo de venda
+function sugestaoDoces() {
+  var doces = porTipo('Produto');
+  if (TIPO === 'doces' || !doces.length || temNaPagina('doces') || !(kgBolo() > 0)) return null;
+  var pessoas = PESSOAS > 0 ? PESSOAS : Math.round(fatiasTotais().min), passoD = doces[0].passo || 25, minD = doces[0].min || 25;
+  var q = Math.max(minD, Math.ceil(pessoas * 3 / passoD) * passoD);
+  var o = opcoesDesconto(), meta = o && o.doces && !o.doces.fk ? o.doces : null;
+  return { pessoas: pessoas, q: q, doces: doces, meta: meta };
+}
+function cardSugestaoDoces() {
+  var sg = sugestaoDoces();
+  if (!sg) return '';
+  var opcoes = [sg.q];
+  if (sg.meta && sg.meta.fd > sg.q && sg.meta.fd <= sg.q * 2) opcoes.push(sg.meta.fd);
+  var h = '<div class="card sugestao"><b>💡 Docinhos para a festa</b><div class="muted" style="margin-top:4px;">' + (PESSOAS > 0 ? 'Para a festa de' : 'Seu bolo serve cerca de') + ' <b>' + sg.pessoas + ' pessoas</b>. Calculando 3 docinhos por pessoa, ficam <b>' + sg.q + ' docinhos</b>' +
+    (sg.meta ? '. Com <b>' + sg.meta.fd + '</b>, o pedido inteiro ganha <b>' + num(sg.meta.r.pct) + '% de desconto</b>' : '') + '.</div>';
+  opcoes.forEach(function (q) {
+    h += '<div class="muted" style="margin-top:10px;font-weight:700;color:var(--texto);">' + q + ' docinhos · toque no sabor</div><div class="chips">' +
+      sg.doces.map(function (d) { var qq = Math.min(Math.max(q, d.min), d.max); return '<button class="chip" onclick="sugerirDoce(\'' + d.id + '\',' + qq + ')">' + esc(d.nome) + '<small>' + brl(qq * d.preco) + '</small></button>'; }).join('') + '</div>';
+  });
+  return h + '<div class="muted" style="margin-top:8px;">Quer misturar sabores? Use os botões + da lista abaixo.</div></div>';
+}
+function sugerirDoce(id, q) { carrinho[id] = q; reRender(); }
+function pgTopo() {
+  var itens = porTipo('Adicional'), og = ordenarGrupos(itens, C.ordemCategorias);
+  var titulo = itens.every(function (x) { return /topo/i.test(x.nome); }) ? 'Topo de bolo' : og.ordem.length === 1 && og.ordem[0] !== 'Adicionais' ? og.ordem[0] : 'Topo de bolo e adicionais';
+  return '<h2>✨ ' + esc(titulo) + '</h2><div class="muted" style="margin:-4px 2px 10px;">Não precisa? É só tocar em <b>Pular</b>.</div>' + listaAgrupada(itens);
+}
+function temNaPagina(k) {
+  return itensEscolhidos().some(function (x) { return k === 'doces' ? x.it.tipo === 'Produto' || (x.kit && !(x.it.kitKg > 0)) : x.it.tipo === 'Adicional'; });
+}
+
+// categorias na ordem escolhida pela loja (as não listadas vêm depois, na ordem do cardápio);
+// dentro de cada categoria, itens em ordem alfabética
+function ordenarGrupos(itens, ordemLoja) {
+  var grupos = {}, ordem = [];
+  itens.forEach(function (it) {
+    var g = it.grupo || it.categoria || (it.bolo ? 'Bolos' : it.tipo === 'Adicional' ? 'Adicionais' : 'Doces');
+    if (!grupos[g]) { grupos[g] = []; ordem.push(g); }
+    grupos[g].push(it);
+  });
+  var pos = function (g) { var i = (ordemLoja || []).indexOf(g); return i < 0 ? 1000 + ordem.indexOf(g) : i; };
+  ordem.sort(function (a, b) { return pos(a) - pos(b); });
+  ordem.forEach(function (g) { grupos[g].sort(function (a, b) { return a.nome.localeCompare(b.nome, 'pt-BR', { sensitivity: 'base' }); }); });
+  return { grupos: grupos, ordem: ordem };
+}
+function fx(f) { return f && f.min ? f : C.fatiasPadrao && C.fatiasPadrao.min ? C.fatiasPadrao : { min: 8, max: 10 }; }
+function fatiasTexto(f, kg) {
+  f = fx(f);
+  var a = Math.round(f.min * kg), b = Math.round(f.max * kg);
+  return a === b ? 'rende ≈ ' + a + ' fatia' + (a === 1 ? '' : 's') : 'rende de ' + a + ' a ' + b + ' fatias';
+}
+function bolos() { return C.itens.filter(function (x) { return x.bolo; }).sort(function (a, b) { return a.nome.localeCompare(b.nome, 'pt-BR'); }); }
+function boloPorId(id) { return C.itens.filter(function (x) { return x.id === id && x.bolo; })[0]; }
+function kitInclui(it) {
+  var p = [];
+  if (it.kitKg) p.push(num(it.kitKg) + ' kg de bolo (sabor à escolha)');
+  (it.kitItens || []).forEach(function (x) { p.push(num(x.qtd) + (x.unidade && x.unidade !== 'un' ? ' ' + x.unidade : '') + ' ' + x.nome); });
+  return p.join(' + ');
+}
+function htmlItem(it) {
+  var kit = it.tipo === 'Kit', q = carrinho[it.id] || 0;
+  return '<div class="card item' + (q ? ' sel' : '') + '" id="it-' + it.id + '" style="flex-wrap:wrap;">' +
+    (it.foto ? '<img src="' + esc(it.foto) + '" alt="" loading="lazy" onerror="this.remove()">' : '') +
+    '<div class="info"><div class="nome">' + esc(it.nome) + '</div>' + (it.descricao ? '<div class="desc">' + esc(it.descricao) + '</div>' : '') +
+    (kit && kitInclui(it) ? '<div class="kit-inclui">📦 Inclui: ' + esc(kitInclui(it)) + '</div>' : '') +
+    '<div class="preco">' + brl(it.preco) + (it.unidade === 'kg' ? ' / kg' : it.unidade === 'un' ? ' / un' : ' / ' + esc(it.unidade)) +
+    (!kit && (it.min > 1 || it.bolo) ? ' <span class="muted">· mín. ' + num(it.min) + (it.unidade === 'kg' ? ' kg' : '') + '</span>' : '') + '</div>' +
+    (it.bolo ? '<div class="muted" style="font-size:12px;margin-top:2px;">1 kg ' + fatiasTexto(it.fatiasKg, 1) + '</div>' : '') +
+    (kit && it.kitKg ? '<div class="muted" style="font-size:12px;margin-top:2px;">Bolo do kit ' + fatiasTexto(null, it.kitKg) + '</div>' : '') +
+    (it.bolo || kit ? '<div class="muted" id="ft-' + it.id + '" style="font-size:12px;color:var(--azul);font-weight:700;">' + textoFt(it, q) + '</div>' : '') +
+    (it.bolo || it.tipo === 'Produto' ? '<div data-dica="' + it.id + '">' + dicaItem(it) + '</div>' : '') + '</div>' +
+    '<div class="passo"><button onclick="mudar(\'' + it.id + '\',-1)">−</button><span class="q" id="q-' + it.id + '">' + qTexto(it, q) + '</span><button class="mais" onclick="mudar(\'' + it.id + '\',1)">+</button></div>' +
+    (kit && it.kitKg ? '<div id="ks-' + it.id + '" class="' + (q ? '' : 'oculto') + '" style="flex-basis:100%;"><label style="margin-top:6px;">Sabor do bolo do kit</label><select onchange="saborKit[\'' + it.id + '\']=this.value;atualizarBarra();"><option value="">Escolha o sabor</option>' +
+      bolos().map(function (b) { return '<option value="' + b.id + '"' + (saborKit[it.id] === b.id ? ' selected' : '') + '>' + esc(b.nome) + '</option>'; }).join('') + '</select></div>' : '') +
+    '</div>';
+}
+function qTexto(it, q) { return q ? num(q) + (it.unidade === 'kg' ? ' kg' : '') : '0'; }
+function textoFt(it, q) {
+  if (!q) return '';
+  if (it.bolo) return num(q) + ' kg ' + fatiasTexto(it.fatiasKg, q);
+  if (it.tipo === 'Kit' && it.kitKg && q > 1) return q + ' kits: ' + num(q * it.kitKg) + ' kg de bolo, ' + fatiasTexto(null, q * it.kitKg);
+  return '';
+}
+// ── MONTE SEU BOLO ──
+function htmlMonte() {
+  return '<h2>🎨 Monte seu bolo</h2><div class="muted" style="margin:-4px 2px 10px;">Escolha a massa, os recheios e o peso. Os recheios são os mesmos dos nossos bolos do cardápio.</div><div class="card" id="monte"></div>';
+}
+function parteMont(lista, id) { return lista.filter(function (x) { return x.id === id; })[0]; }
+function frutasDe(m) { return (m.frutas || []).map(function (id) { return parteMont(C.montagem.frutas || [], id); }).filter(Boolean); }
+function precoMontado(m) {
+  var M = C.montagem, ms = parteMont(M.massas, m.massa), ac = 0;
+  m.recheios.forEach(function (id) { var r = parteMont(M.recheios, id); if (r && r.acrescimo > ac) ac = r.acrescimo; });
+  frutasDe(m).forEach(function (f) { if (f.acrescimo > ac) ac = f.acrescimo; });
+  return Math.round((M.base + (ms ? ms.acrescimo : 0) + ac) * 100) / 100;
+}
+function descMontado(m) {
+  var M = C.montagem, ms = parteMont(M.massas, m.massa);
+  var fr = frutasDe(m);
+  return (ms ? ms.nome : '?') + ' · ' + m.recheios.map(function (id) { var r = parteMont(M.recheios, id); return r ? r.nome : '?'; }).join(' + ') +
+    (fr.length ? ' · com ' + fr.map(function (f) { return f.nome; }).join(' + ') : '');
+}
+function chipParte(x, on, fn) {
+  return '<button class="chip' + (on ? ' on' : '') + '" onclick="' + fn + '(\'' + x.id + '\')">' + esc(x.nome) +
+    (x.acrescimo ? '<small>+' + brl(x.acrescimo) + '/kg</small>' : x.descricao ? '<small>' + esc(x.descricao) + '</small>' : '') + '</button>';
+}
+function renderMonte() {
+  if (!$('monte')) return;
+  var M = C.montagem, pronto = MONT.massa && MONT.recheios.length;
+  var temFruta = (M.frutas || []).length && M.maxFrutas > 0;
+  var h = '<div class="muted">Escolha a massa e ' + (M.maxRecheios > 1 ? 'até ' + M.maxRecheios + ' recheios' : 'o recheio') + (temFruta ? ' e, se quiser, ' + (M.maxFrutas > 1 ? 'até ' + M.maxFrutas + ' frutas' : 'uma fruta') + ' para ir junto do recheio' : '') + '. A partir de <b>' + brl(M.base) + '/kg</b>' +
+    '; com opções de preços diferentes, vale o da mais cara.</div>' +
+    '<label>Massa</label><div class="chips">' + M.massas.map(function (x) { return chipParte(x, MONT.massa === x.id, 'escolherMassa'); }).join('') + '</div>' +
+    '<label>Recheio' + (M.maxRecheios > 1 ? ' (até ' + M.maxRecheios + ')' : '') + '</label><div class="chips">' + M.recheios.map(function (x) { return chipParte(x, MONT.recheios.indexOf(x.id) >= 0, 'alternarRecheio'); }).join('') + '</div>' +
+    (temFruta ? '<label>Fruta junto do recheio (opcional' + (M.maxFrutas > 1 ? ', até ' + M.maxFrutas : '') + ')</label><div class="chips">' + M.frutas.map(function (x) { return chipParte(x, MONT.frutas.indexOf(x.id) >= 0, 'alternarFruta'); }).join('') + '</div>' : '') +
+    '<label>Peso</label><div class="passo"><button onclick="kgMonte(-1)">−</button><span class="q">' + num(MONT.kg) + ' kg</span><button class="mais" onclick="kgMonte(1)">+</button>' +
+    '<span class="muted" style="margin-left:6px;">' + fatiasTexto(M.fatias, MONT.kg) + '</span></div>' +
+    (pronto ? '<div class="monte-tot">' + esc(descMontado(MONT)) + '<br><b>' + brl(precoMontado(MONT)) + '/kg · ' + num(MONT.kg) + ' kg = ' + brl(precoMontado(MONT) * MONT.kg) + '</b>' + dicaKgMonte() + '</div>' : '') +
+    '<button class="btn" style="margin-top:12px;" ' + (pronto ? '' : 'disabled') + ' onclick="adicionarMontado()">' + (pronto ? 'Adicionar ao pedido' : 'Escolha massa e recheio') + '</button>' +
+    (montados.length ? '<div style="margin-top:10px;">' + montados.map(function (m, i) {
+      return '<div class="monte-add"><span>✅ ' + num(m.kg) + ' kg · ' + esc(descMontado(m)) + '<br><b>' + brl(precoMontado(m) * m.kg) + '</b></span><button onclick="removerMontado(' + i + ')">Tirar</button></div>';
+    }).join('') + '</div>' : '');
+  $('monte').innerHTML = h;
+}
+function escolherMassa(id) { MONT.massa = id; renderMonte(); }
+// "com mais X kg você ganha Y%" para o bolo que está sendo montado (conta o que já está no pedido)
+function dicaKgMonte() {
+  var o = opcoesDesconto(MONT.kg), p = o && o.kg;
+  if (!p || !(p.fk > 0)) return '';
+  var M = C.montagem, kgNovo = Math.round((MONT.kg + p.fk) * 100) / 100;
+  if (kgNovo > M.max) return '';
+  return '<div class="dica-item">🎁 Com ' + num(kgNovo) + ' kg este bolo já garante <b>' + num(p.r.pct) + '% de desconto</b> no pedido. <a href="#" onclick="kgMonteAte(' + kgNovo + ');return false;">Aumentar para ' + num(kgNovo) + ' kg</a></div>';
+}
+function kgMonteAte(kg) { MONT.kg = Math.min(kg, C.montagem.max); renderMonte(); }
+function alternarRecheio(id) {
+  var i = MONT.recheios.indexOf(id), max = C.montagem.maxRecheios;
+  if (i >= 0) MONT.recheios.splice(i, 1);
+  else if (max === 1) MONT.recheios = [id];
+  else if (MONT.recheios.length >= max) { alert('Escolha até ' + max + ' recheios. Toque em um escolhido para tirar.'); return; }
+  else MONT.recheios.push(id);
+  renderMonte();
+}
+function alternarFruta(id) {
+  var i = MONT.frutas.indexOf(id), max = C.montagem.maxFrutas;
+  if (i >= 0) MONT.frutas.splice(i, 1);
+  else if (max === 1) MONT.frutas = [id];
+  else if (MONT.frutas.length >= max) { alert('Escolha até ' + max + ' frutas. Toque em uma escolhida para tirar.'); return; }
+  else MONT.frutas.push(id);
+  renderMonte();
+}
+function kgMonte(dir) {
+  var M = C.montagem;
+  MONT.kg = Math.round(Math.min(Math.max(MONT.kg + dir * M.passo, M.min), M.max) * 100) / 100;
+  renderMonte();
+  renderDicaDesconto();
+}
+function adicionarMontado() {
+  if (!MONT.massa || !MONT.recheios.length) return;
+  if (montados.length >= 5) { alert('Monte no máximo 5 bolos por pedido.'); return; }
+  montados.push({ massa: MONT.massa, recheios: MONT.recheios.slice(), frutas: (MONT.frutas || []).slice(), kg: MONT.kg });
+  MONT = { massa: '', recheios: [], frutas: [], kg: C.montagem.min };
+  renderMonte(); atualizarBarra();
+}
+function removerMontado(i) { montados.splice(i, 1); renderMonte(); atualizarBarra(); }
+
+function mudar(id, dir) {
+  var it = C.itens.filter(function (x) { return x.id === id; })[0];
+  var q = carrinho[id] || 0;
+  if (dir > 0) q = q ? Math.min(q + it.passo, it.max) : it.min;
+  else q = q - it.passo < it.min ? 0 : q - it.passo;
+  q = Math.round(q * 100) / 100;
+  if (q) carrinho[id] = q; else { delete carrinho[id]; delete saborKit[id]; }
+  if ($('q-' + id)) $('q-' + id).textContent = qTexto(it, q);
+  if ($('ft-' + id)) $('ft-' + id).textContent = textoFt(it, q);
+  if ($('ks-' + id)) { $('ks-' + id).classList.toggle('oculto', !q); if (!q) $('ks-' + id).querySelector('select').value = ''; }
+  if ($('it-' + id)) $('it-' + id).classList.toggle('sel', !!q);
+  atualizarBarra();
+}
+// cada linha: { it, qtd, sub, rotulo, kg (capacidade e fatias), kgDesc (conta para desconto), kit, montado }
+function itensEscolhidos() {
+  var L = C.itens.filter(function (it) { return carrinho[it.id]; }).map(function (it) {
+    var q = carrinho[it.id], x = { it: it, qtd: q, sub: Math.round(q * it.preco * 100) / 100, rotulo: it.nome, kg: 0, kgDesc: 0 };
+    if (it.tipo === 'Kit') {
+      var s = boloPorId(saborKit[it.id]);
+      x.kit = true; x.kg = (it.kitKg || 0) * q; x.fatiasKg = s ? s.fatiasKg : null;
+      if (s) x.rotulo += ' (bolo ' + s.nome + ')';
+    } else if (it.bolo) { x.kg = q; x.kgDesc = q; x.fatiasKg = it.fatiasKg; }
+    return x;
+  });
+  montados.forEach(function (m, i) {
+    var p = precoMontado(m);
+    L.push({ it: { nome: 'Bolo montado', unidade: 'kg', tipo: 'Montado', bolo: true }, montado: true, idx: i, qtd: m.kg, sub: Math.round(m.kg * p * 100) / 100,
+      rotulo: 'Bolo montado (' + descMontado(m) + ')', kg: m.kg, kgDesc: m.kg, fatiasKg: C.montagem.fatias });
+  });
+  if (TIPO === 'andar' && ANDAR.baixo && ANDAR.cima) {
+    var pa = precoAndar();
+    L.unshift({ it: { nome: 'Bolo de andar', unidade: 'kg', tipo: 'Andar', bolo: true }, andar: true, qtd: ANDAR.kg, sub: Math.round(ANDAR.kg * pa * 100) / 100,
+      rotulo: 'Bolo de andar (' + descAndar() + ')', kg: ANDAR.kg, kgDesc: 0, fatiasKg: null });
+  }
+  return L;
+}
+function fatiasTotais() {
+  var t = { min: 0, max: 0 };
+  itensEscolhidos().forEach(function (x) { if (x.kg) { var f = fx(x.fatiasKg); t.min += x.kg * f.min; t.max += x.kg * f.max; } });
+  return t;
+}
+function kgBolo() { return itensEscolhidos().reduce(function (s, x) { return s + (x.kg || 0); }, 0); }
+function kgDesc() { return itensEscolhidos().reduce(function (s, x) { return s + (x.kgDesc || 0); }, 0); }
+function subtotalDesc() { return Math.round(itensEscolhidos().filter(function (x) { return !x.kit; }).reduce(function (s, x) { return s + x.sub; }, 0) * 100) / 100; }
+function docesUn() {
+  return itensEscolhidos().filter(function (x) { return !x.it.bolo && x.it.tipo === 'Produto'; }).reduce(function (s, x) {
+    return s + (/cento/i.test(x.it.unidade) ? x.qtd * 100 : /d[uú]zia/i.test(x.it.unidade) ? x.qtd * 12 : x.qtd);
+  }, 0);
+}
+function subtotalItens() { return Math.round(itensEscolhidos().reduce(function (s, x) { return s + x.sub; }, 0) * 100) / 100; }
+// mesma regra da planilha: vale a regra de maior % que o pedido atinge (não somam)
+function descontoAtual() {
+  if (TIPO === 'andar') return { pct: 0, valor: 0 };   // bolo de andar não tem desconto
+  var kg = kgDesc(), dc = docesUn(), r = (C.descontos || []).filter(function (x) { return kg >= x.kg && dc >= x.doces; })[0];
+  return r ? { pct: r.pct, nome: r.nome, valor: Math.round(subtotalDesc() * r.pct) / 100 } : { pct: 0, valor: 0 };
+}
+// extraKg: kg que ainda não está no pedido (ex.: bolo sendo montado) e entra na conta
+function proximoDesconto(extraKg) {
+  if (TIPO === 'andar') return null;
+  var kg = kgDesc() + (extraKg || 0), dc = docesUn(), atual = descontoAtual().pct, melhor = null;
+  (C.descontos || []).forEach(function (x) {
+    if (x.pct <= atual || (kg >= x.kg && dc >= x.doces)) return;
+    var fk = Math.max(Math.round((x.kg - kg) * 100) / 100, 0), fd = Math.max(x.doces - dc, 0), custo = fk + fd / 100;
+    if (!melhor || custo < melhor.custo || (custo === melhor.custo && x.pct > melhor.r.pct)) melhor = { r: x, fk: fk, fd: fd, custo: custo };
+  });
+  return melhor;
+}
+// caminhos até o próximo desconto: só com mais bolo, só com mais docinhos, ou o mais curto
+function opcoesDesconto(extraKg) {
+  if (TIPO === 'andar') return null;
+  var kg = kgDesc() + (extraKg || 0), dc = docesUn(), atual = descontoAtual().pct, o = { kg: null, doces: null, melhor: proximoDesconto(extraKg) };
+  (C.descontos || []).forEach(function (x) {
+    if (x.pct <= atual || (kg >= x.kg && dc >= x.doces)) return;
+    var fk = Math.max(Math.round((x.kg - kg) * 100) / 100, 0), fd = Math.max(x.doces - dc, 0), c = { r: x, fk: fk, fd: fd, custo: fk + fd / 100 };
+    if (fd === 0 && (!o.kg || fk < o.kg.fk || (fk === o.kg.fk && x.pct > o.kg.r.pct))) o.kg = c;
+    if (fk === 0 && (!o.doces || fd < o.doces.fd || (fd === o.doces.fd && x.pct > o.doces.r.pct))) o.doces = c;
+  });
+  return o.melhor ? o : null;
+}
+function temBoloNoPedido() { return kgDesc() > 0; }
+function temDoceNoPedido() { return docesUn() > 0; }
+// o caminho que combina com o que a pessoa está comprando
+function caminhoPrincipal(o) {
+  if (!o) return null;
+  var k = chave();
+  if (o.kg && (temBoloNoPedido() || (k === 'bolos' && !temDoceNoPedido()))) return o.kg;
+  if (o.doces && (temDoceNoPedido() || k === 'doces' || TIPO === 'doces')) return o.doces;
+  return o.melhor;
+}
+// quanto já andou rumo à regra (0 a 1)
+function progressoRegra(r) {
+  var partes = [];
+  if (r.kg > 0) partes.push(Math.min(kgDesc() / r.kg, 1));
+  if (r.doces > 0) partes.push(Math.min(docesUn() / r.doces, 1));
+  return partes.length ? partes.reduce(function (a, b) { return a + b; }, 0) / partes.length : 0;
+}
+function textoRegra(r) {
+  return (r.kg ? num(r.kg) + ' kg de bolo' : '') + (r.kg && r.doces ? ' + ' : '') + (r.doces ? (r.doces % 100 === 0 ? (r.doces === 100 ? '1 cento' : num(r.doces / 100) + ' centos') + ' de docinhos' : num(r.doces) + ' docinhos') : '');
+}
+function itemPorId(id) { return C.itens.filter(function (x) { return x.id === id; })[0]; }
+function precoMedioBolo() { var b = bolos(); return b.length ? b.reduce(function (s, x) { return s + x.preco; }, 0) / b.length : 0; }
+function docesDisponiveis() { return porTipo('Produto'); }
+// o que dá para fazer com um toque para chegar ao desconto
+function acaoDesconto(p) {
+  if (!p) return null;
+  var k = chave();
+  if (p.fk > 0) {
+    // 1) bolo do cardápio já escolhido: aumenta ele
+    var bx = Object.keys(carrinho).map(itemPorId).filter(function (it) { return it && it.bolo; })[0];
+    if (bx && carrinho[bx.id] + p.fk <= bx.max) return { rotulo: "+" + num(p.fk) + " kg", extra: p.fk * bx.preco, fn: function () { carrinho[bx.id] = Math.round((carrinho[bx.id] + p.fk) * 100) / 100; reRender(); } };
+    // 2) bolo montado já no pedido: aumenta o último
+    if (montados.length) {
+      var m = montados[montados.length - 1];
+      if (m.kg + p.fk <= C.montagem.max) return { rotulo: '+' + num(p.fk) + ' kg', extra: p.fk * precoMontado(m), fn: function () { m.kg = Math.round((m.kg + p.fk) * 100) / 100; reRender(); } };
+    }
+    // 3) ainda não escolheu bolo: leva até a página dos bolos
+    if (TIPO === 'comum' && k !== 'bolos' && FLUXO.indexOf('bolos') >= 0) return { rotulo: 'Ver bolos', extra: p.fk * precoMedioBolo(), fn: function () { irPasso(FLUXO.indexOf('bolos')); } };
+    if (TIPO === '' && k === 'tipo') return { rotulo: 'Quero bolo', extra: p.fk * precoMedioBolo(), fn: function () { escolherTipo('comum'); } };
+    return { rotulo: '', extra: p.fk * precoMedioBolo(), fn: null };
+  }
+  if (p.fd > 0) {
+    var d = Object.keys(carrinho).map(itemPorId).filter(function (it) { return it && it.tipo === 'Produto'; })[0];
+    if (d) {
+      var add = Math.ceil(p.fd / d.passo) * d.passo;
+      if (carrinho[d.id] + add <= d.max) return { rotulo: '+' + num(add) + ' ' + esc_un(d), extra: add * d.preco, fn: function () { carrinho[d.id] = Math.round((carrinho[d.id] + add) * 100) / 100; reRender(); } };
+    }
+    var dd = docesDisponiveis(), med = dd.length ? dd.reduce(function (s, x) { return s + x.preco; }, 0) / dd.length : 0;
+    if (k !== 'doces' && FLUXO.indexOf('doces') >= 0) return { rotulo: 'Ver docinhos', extra: p.fd * med, fn: function () { irPasso(FLUXO.indexOf('doces')); } };
+    return { rotulo: '', extra: p.fd * med, fn: null };
+  }
+  return null;
+}
+function faltaTxt(p) { return p.fk > 0 && p.fd > 0 || p.fd > 1 || p.fk > 1 ? 'Faltam ' : 'Falta '; }
+function esc_un(it) { return it.unidade && it.unidade.toLowerCase() !== 'un' ? it.unidade : 'un'; }
+var _acaoPromo = null, _promoFechado = false, _pctAntes = 0;
+function rodarAcaoPromo() { if (_acaoPromo && _acaoPromo.fn) _acaoPromo.fn(); }
+function fecharPromo(v) { _promoFechado = v; renderDicaDesconto(); }
+// re-desenha a página atual sem perder a posição da tela
+function reRender() {
+  var y = window.scrollY, k = chave();
+  if (['tipo', 'bolos', 'doces', 'topo'].indexOf(k) >= 0) renderPagina();
+  if (k === 'pagar') renderEtapa3();
+  window.scrollTo(0, y);
+  atualizarBarra();
+}
+// dica pequena dentro do card do bolo/docinho escolhido
+function dicaItem(it) {
+  var q = carrinho[it.id];
+  if (!q || TIPO === 'andar') return '';
+  var d = descontoAtual(), o = opcoesDesconto(), p = o && (it.bolo ? o.kg : o.doces);
+  if (d.pct && !o) return '<div class="dica-item ok">✅ Seu pedido já tem ' + num(d.pct) + '% de desconto</div>';
+  if (!p) return '';
+  if (it.bolo && p.fk > 0 && q + p.fk <= it.max) return '<div class="dica-item">🎁 Com mais ' + num(p.fk) + ' kg (' + num(q + p.fk) + ' kg) você ganha <b>' + num(p.r.pct) + '% de desconto</b></div>';
+  if (it.tipo === 'Produto' && p.fd > 0) return '<div class="dica-item">🎁 Com mais ' + num(p.fd) + ' docinhos você ganha <b>' + num(p.r.pct) + '% de desconto</b></div>';
+  return '';
+}
+function renderDicaDesconto() {
+  document.querySelectorAll('[data-dica]').forEach(function (el) { var it = itemPorId(el.getAttribute('data-dica')); if (it) el.innerHTML = dicaItem(it); });
+  var box = $('promo');
+  if (!box) return;
+  var k = chave();
+  var regras = C.descontos || [];
+  if (!regras.length || TIPO === 'andar' || TIPO === 'doces' && !regras.some(function (r) { return !(r.kg > 0); }) || ['dados', 'pagar'].indexOf(k) >= 0 && !descontoAtual().pct && !proximoDesconto()) { box.classList.add('oculto'); _acaoPromo = null; return; }
+  box.classList.remove('oculto');
+  if (_promoFechado) { box.innerHTML = '<div class="promo-mini"><button onclick="fecharPromo(false)">🎁 Desconto</button></div>'; return; }
+  var d = descontoAtual(), o = opcoesDesconto(), p = caminhoPrincipal(o), h = '', cls = 'promo-in', pct = 0, sub = '';
+  _acaoPromo = null;
+  if (d.pct && !p) {
+    cls += ' ganhou'; pct = 1;
+    h = '🎉 <b>' + num(d.pct) + '% de desconto aplicado!</b><small>' + esc(d.nome) + ' · você economiza ' + brl(d.valor) + '</small>';
+  } else if (p && subtotalItens() > 0) {
+    var a = acaoDesconto(p), falta = [];
+    _acaoPromo = a;
+    if (p.fk > 0) falta.push('<b>' + num(p.fk) + ' kg</b> de bolo');
+    if (p.fd > 0) falta.push('<b>' + num(p.fd) + '</b> docinhos');
+    var alt = p === o.kg ? o.doces : p === o.doces ? o.kg : null;
+    if (alt && alt.r.pct >= p.r.pct) falta = [falta.join(' e ') + ' (ou ' + (alt.fk > 0 ? '<b>' + num(alt.fk) + ' kg</b> de bolo' : '<b>' + num(alt.fd) + '</b> docinhos') + ')'];
+    var econ = Math.round((subtotalDesc() + (a ? a.extra : 0)) * p.r.pct) / 100;
+    if (d.pct) { cls += ' ganhou'; h = '🎉 ' + num(d.pct) + '% aplicado. ' + faltaTxt(p) + falta.join(' e ') + ' para subir para <b>' + num(p.r.pct) + '%</b>'; }
+    else h = '🎁 ' + faltaTxt(p) + falta.join(' e ') + ' para ganhar <b>' + num(p.r.pct) + '% de desconto</b>';
+    sub = econ > 0 ? 'Economia de ' + brl(econ) + ' no pedido' + (a && a.extra > 0 && a.fn ? ' (adicionando cerca de ' + brl(a.extra) + ')' : '') : '';
+    h += sub ? '<small>' + sub + '</small>' : '';
+    pct = progressoRegra(p.r);
+  } else {
+    // nada escolhido ainda: mostra as promoções
+    var lista = regras.slice().sort(function (x, y) { return (x.kg + x.doces / 100) - (y.kg + y.doces / 100); }).slice(0, 2);
+    var pcts = regras.map(function (r) { return r.pct; }), maxP = Math.max.apply(null, pcts), igual = pcts.every(function (x) { return x === maxP; });
+    h = '🎁 <b>Ganhe ' + (igual ? '' : 'até ') + num(maxP) + '% de desconto</b><small>em pedidos com ' + lista.map(function (r) { return textoRegra(r); }).join(' ou com ') + '</small>';
+  }
+  var btn = _acaoPromo && _acaoPromo.fn && _acaoPromo.rotulo ? '<button class="promo-btn" onclick="rodarAcaoPromo()">' + esc(_acaoPromo.rotulo) + '</button>' : '';
+  var pulou = d.pct > _pctAntes; _pctAntes = d.pct;
+  box.innerHTML = '<div class="' + cls + (pulou ? ' pulou' : '') + '"><div class="promo-top"><div class="promo-txt">' + h + '</div>' + btn +
+    '<button class="promo-x" aria-label="Minimizar" onclick="fecharPromo(true)">×</button></div>' +
+    (pct > 0 ? '<div class="promo-bar"><i style="width:' + Math.round(pct * 100) + '%"></i></div>' : '') + '</div>';
+}
+function totalPedido() {
+  var t = subtotalItens() - descontoAtual().valor;
+  if (esc_.modo === 'entrega' && C.fazEntrega) t += C.taxaEntrega;
+  return Math.round(t * 100) / 100;
+}
+function sinalPedido() { return Math.round(totalPedido() * C.sinalPct) / 100; }
+
+function atualizarBarra() {
+  renderDicaDesconto();
+  var k = chave();
+  $('barraTotal').textContent = brl(totalPedido());
+  $('barraRotulo').textContent = k === 'pagar' && esc_.forma ? 'Sinal agora' : 'Total';
+  if (k === 'pagar' && esc_.forma) $('barraTotal').textContent = brl(valorSinalForma(esc_.forma));
+  $('btnVoltar').classList.toggle('oculto', passo === 0);
+  var vazio = TIPO !== 'doces' && ((k === 'doces' && !temNaPagina('doces')) || (k === 'topo' && !temNaPagina('topo')));
+  $('btnAvancar').textContent = k === 'pagar' ? 'Fazer pedido' : vazio ? 'Pular' : 'Continuar';
+}
+function valorSinalForma(f) { var s = sinalPedido(); return f === 'cartao' ? Math.round(s * (1 + C.taxaCartao / 100) * 100) / 100 : s; }
+
+function voltar() { if (passo > 0) irPasso(passo - 1); }
+
+function avancar() {
+  var k = chave(), L = itensEscolhidos();
+  if (k === 'tipo') {
+    if (!TIPO) { alert('Escolha o tipo de bolo.'); return; }
+  } else if (k === 'bolos') {
+    if (TIPO === 'andar') {
+      if (!ANDAR.baixo || !ANDAR.cima) { alert('Escolha o sabor do andar de baixo e o do andar de cima.'); return; }
+    } else {
+      if (C.montagem && MODO_BOLO === 'montar' && (MONT.massa || MONT.recheios.length || MONT.frutas.length) && !confirm('Você começou a montar um bolo e não tocou em "Adicionar ao pedido". Continuar sem ele?')) { $('monte').scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
+      if (!L.some(function (x) { return x.kg > 0; })) { alert('Escolha o bolo: um sabor' + (kitsComBolo().length ? ', um kit festa' : '') + (C.montagem ? ' ou monte o seu' : '') + '.'); return; }
+      var semSabor = L.filter(function (x) { return x.kit && x.it.kitKg && !boloPorId(saborKit[x.it.id]); })[0];
+      if (semSabor) { alert('Escolha o sabor do bolo do ' + semSabor.it.nome + '.'); $('it-' + semSabor.it.id).scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
+    }
+  } else if (k === 'doces') {
+    if (TIPO === 'doces' && !temNaPagina('doces')) { alert('Escolha ao menos um docinho.'); return; }
+  } else if (k === 'dados') {
+    limparErro('erro2');
+    if (!esc_.data) return mostrarErro('erro2', 'Escolha a data.');
+    if (!esc_.horario) return mostrarErro('erro2', 'Escolha o horário.');
+    if (esc_.modo === 'entrega' && $('endereco').value.trim().length < 8) return mostrarErro('erro2', 'Informe o endereço de entrega.');
+    if ($('nome').value.trim().length < 2) return mostrarErro('erro2', 'Informe seu nome.');
+    if (!/^\d{10,11}$/.test($('whats').value.replace(/\D/g, '').replace(/^55(?=\d{10,11}$)/, ''))) return mostrarErro('erro2', 'Informe seu WhatsApp com DDD.');
+  } else if (k === 'pagar') { enviarPedido(); return; }
+  irPasso(passo + 1);
+}
+// ── ETAPA 2 ──
+function renderEtapa2() {
+  var kg = kgBolo();
+  $('datas').innerHTML = C.datas.map(function (d) {
+    var cabe = d.kgLivre >= kg;
+    var p = dataLonga(d.data).split(', ');
+    return '<button class="chip' + (esc_.data === d.data ? ' on' : '') + '" ' + (cabe ? '' : 'disabled') + ' onclick="escolher(\'data\',\'' + d.data + '\')">' +
+      esc(p[1] || p[0]) + '<small>' + esc(p[0].replace('-feira', '')) + '</small></button>';
+  }).join('') || '<div class="muted">Sem datas disponíveis no momento. Fale com a loja.</div>';
+  $('datasInfo').textContent = kg ? 'Datas apagadas já não têm capacidade para ' + num(kg) + ' kg de bolo.' : '';
+  $('horarios').innerHTML = C.horarios.map(function (h) {
+    return '<button class="chip' + (esc_.horario === h ? ' on' : '') + '" onclick="escolher(\'horario\',\'' + h + '\')">' + h + '</button>';
+  }).join('');
+  if (!C.fazEntrega) esc_.modo = 'retirada';
+  $('tituloModo').textContent = C.fazEntrega ? '📍 Retirada ou entrega' : '📍 Retirada na loja';
+  $('modos').innerHTML = !C.fazEntrega ? '<div class="card"><b>' + esc(C.loja) + '</b><div class="muted">' + esc(C.enderecoRetirada) + '</div></div>' : '<label class="opcao' + (esc_.modo === 'retirada' ? ' on' : '') + '"><input type="radio" name="modo" ' + (esc_.modo === 'retirada' ? 'checked' : '') + ' onchange="escolher(\'modo\',\'retirada\')"><div><b>Retirar na loja</b><div class="muted">' + esc(C.enderecoRetirada) + '</div></div></label>' +
+    (C.fazEntrega ? '<label class="opcao' + (esc_.modo === 'entrega' ? ' on' : '') + '"><input type="radio" name="modo" ' + (esc_.modo === 'entrega' ? 'checked' : '') + ' onchange="escolher(\'modo\',\'entrega\')"><div><b>Entrega · ' + brl(C.taxaEntrega) + '</b><div class="muted">' + esc(C.regiao) + '</div></div></label>' : '');
+  $('boxEndereco').classList.toggle('oculto', esc_.modo !== 'entrega');
+}
+function escolher(campo, v) { esc_[campo] = v; renderEtapa2(); atualizarBarra(); }
+
+// ── ETAPA 3 ──
+function renderEtapa3() {
+  var linhas = itensEscolhidos().map(function (x) {
+    return '<div class="linha"><span>' + (x.it.unidade === 'kg' ? num(x.qtd) + ' kg' : num(x.qtd) + 'x') + ' ' + esc(x.rotulo) + '</span><span>' + brl(x.sub) + '</span></div>';
+  }).join('');
+  var dsc = descontoAtual();
+  if (dsc.valor) linhas += '<div class="linha" style="color:#1B5E20;font-weight:700;"><span>Desconto ' + num(dsc.pct) + '% (' + esc(dsc.nome) + ')</span><span>−' + brl(dsc.valor) + '</span></div>';
+  if (esc_.modo === 'entrega') linhas += '<div class="linha"><span>Entrega</span><span>' + brl(C.taxaEntrega) + '</span></div>';
+  $('resumo').innerHTML = linhas +
+    '<div class="linha total"><span>Total</span><span>' + brl(totalPedido()) + '</span></div>' +
+    (kgBolo() ? '<div class="muted" style="margin:-2px 0 6px;">🍰 ' + num(kgBolo()) + ' kg de bolo ' + fatiasTexto(fatiasTotais(), 1) + '</div>' : '') +
+    '<div class="linha destaque"><span>Sinal agora (' + C.sinalPct + '%)</span><span>' + brl(sinalPedido()) + '</span></div>' +
+    '<div class="linha"><span>Restante na ' + (esc_.modo === 'entrega' ? 'entrega' : 'retirada') + '</span><span>' + brl(totalPedido() - sinalPedido()) + '</span></div>' +
+    '<div class="muted" style="margin-top:8px;">📅 ' + esc(dataLonga(esc_.data)) + ' às ' + esc(esc_.horario) + ' · ' + (esc_.modo === 'entrega' ? 'entrega' : 'retirada') + '</div>';
+  if (!esc_.forma || (esc_.forma === 'pix' && !C.aceitaPix) || (esc_.forma === 'cartao' && !C.aceitaCartao)) esc_.forma = C.aceitaPix ? 'pix' : C.aceitaCartao ? 'cartao' : '';
+  var f = '';
+  if (C.aceitaPix) f += '<label class="opcao' + (esc_.forma === 'pix' ? ' on' : '') + '"><input type="radio" name="forma" ' + (esc_.forma === 'pix' ? 'checked' : '') + ' onchange="escolherForma(\'pix\')"><div><b>Pix · ' + brl(valorSinalForma('pix')) + '</b><div class="muted">QR Code e copia e cola na próxima tela.</div></div></label>';
+  if (C.aceitaCartao) f += '<label class="opcao' + (esc_.forma === 'cartao' ? ' on' : '') + '"><input type="radio" name="forma" ' + (esc_.forma === 'cartao' ? 'checked' : '') + ' onchange="escolherForma(\'cartao\')"><div><b>Cartão de crédito · ' + brl(valorSinalForma('cartao')) + '</b><div class="muted">' +
+    (C.taxaCartao ? 'Inclui ' + num(C.taxaCartao) + '% de taxa do cartão. ' : '') + 'Pelo Mercado Pago, com opção de parcelar (o valor das parcelas aparece lá).</div></div></label>';
+  $('formas').innerHTML = f || '<div class="erro">Pagamento indisponível no momento. Fale com a loja.</div>';
+  $('politica').textContent = C.politica;
+}
+function escolherForma(f) { esc_.forma = f; renderEtapa3(); atualizarBarra(); }
+
+function enviarPedido() {
+  limparErro('erro3');
+  if (!esc_.forma) return mostrarErro('erro3', 'Escolha a forma de pagamento.');
+  if (!$('aceite').checked) return mostrarErro('erro3', 'Marque que aceita a política de cancelamento.');
+  var b = $('btnAvancar'); b.disabled = true; b.textContent = 'Enviando...';
+  api('lojaCriarPedido', [{
+    itens: Object.keys(carrinho).map(function (id) { return { id: id, qtd: carrinho[id], sabor: saborKit[id] || '' }; }),
+    montados: montados.map(function (m) { return { massa: m.massa, recheios: m.recheios, frutas: m.frutas || [], kg: m.kg }; }),
+    // bolo comum vai sem tipo: assim a planilha não pede mais o estilo (alto/baixo), que saiu da página
+    tipoBolo: TIPO === 'comum' ? '' : TIPO, andar: TIPO === 'andar' ? { kg: ANDAR.kg, baixo: ANDAR.baixo, cima: ANDAR.cima } : null,
+    data: esc_.data, horario: esc_.horario, modo: esc_.modo, endereco: $('endereco').value,
+    nome: $('nome').value, whats: $('whats').value, obs: $('obs').value, forma: esc_.forma, aceite: true, foto: FOTO,
+  }]).then(function (r) {
+    TOKEN = r.token;
+    history.replaceState(null, '', '?s=' + Q.get('s') + '&t=' + r.token);
+    try { localStorage.setItem('ultimo_pedido', location.href); } catch (e) {}
+    if (esc_.forma === 'cartao') return pagarCartao(true);
+    abrirPedido();
+  }).catch(function (e) { b.disabled = false; atualizarBarra(); mostrarErro('erro3', e.message); });
+}
+
+// ── PEDIDO: acompanhamento e pagamento ──
+function abrirPedido() {
+  $('carregando').textContent = 'Carregando seu pedido...';
+  $('carregando').classList.remove('oculto');
+  ['e1', 'e2', 'e3', 'barra', 'progresso', 'promo'].forEach(function (id) { $(id).classList.add('oculto'); });
+  api('lojaPedido', [TOKEN]).then(renderPedido).catch(function (e) { $('carregando').classList.add('oculto'); mostrarErro('erroGeral', e.message); });
+}
+
+var PASSOS = ['Pedido feito', 'Sinal pago', 'Pronto', 'Entregue'];
+function passoAtual(p) {
+  if (p.status === 'Entregue') return 3;
+  if (p.status === 'Pronto') return 2;
+  if (p.situacao && p.situacao !== 'Aguardando sinal' && p.situacao !== 'Pix do sinal informado') return 1;
+  return 0;
+}
+
+function renderPedido(p) {
+  $('carregando').classList.add('oculto');
+  $('hLoja').textContent = '🎂 ' + p.loja;
+  $('hSub').textContent = 'Pedido ' + p.id + ' · ' + p.nome;
+  var h = '';
+  if (p.status === 'Cancelado') h += '<div class="erro">Este pedido foi cancelado' + (p.situacao === 'Expirado' ? ' porque o sinal não foi pago a tempo' : '') + '. Se quiser, faça um novo pedido ou fale com a loja.</div>';
+  else {
+    var at = passoAtual(p);
+    h += '<div class="card"><div class="status">' + PASSOS.map(function (s, i) { return '<div class="' + (i <= at ? 'on' : '') + '"><i></i>' + s + '</div>'; }).join('') + '</div></div>';
+  }
+  var dev = p.devido;
+  if (dev && dev.valor > 0 && p.status !== 'Cancelado') {
+    h += '<div class="card"><b style="font-size:16px;">' + (dev.tipo === 'sinal' ? '💰 Pague o sinal para garantir a data' : '💰 Saldo do pedido') + '</b>';
+    if (dev.informado) h += '<div class="ok">Recebemos seu aviso de Pix de ' + brl(dev.valor) + '. A loja vai conferir e o status muda aqui.</div>';
+    else {
+      h += '<div style="font-size:26px;font-weight:800;color:var(--azul);margin:8px 0 2px;">' + brl(dev.valor) + '</div>';
+      if (dev.tipo === 'sinal' && p.expiraEm) h += '<div class="muted">A data fica reservada até ' + esc(p.expiraEm) + '.</div>';
+      if (dev.tipo === 'saldo') h += '<div class="muted">Pode pagar agora ou na ' + (p.modo === 'Entrega' ? 'entrega' : 'retirada') + '.</div>';
+      if (p.pix) {
+        h += '<div class="qr">' + svgQr(p.pix.codigo) + '</div><label>Pix copia e cola</label><div class="copia" id="pixCod">' + esc(p.pix.codigo) + '</div>' +
+          '<button class="btn sec" style="margin-top:8px;" onclick="copiarPix()">Copiar código Pix</button>' +
+          '<label style="margin-top:12px;">Comprovante do Pix (opcional, ajuda a confirmar mais rápido)</label><input type="file" id="compArq" accept="image/*" onchange="lerComprovante(this)">' +
+          '<div class="foto-prev oculto" id="compPrev"><img id="compImg" alt=""><span class="muted">Comprovante anexado.</span></div>' +
+          '<button class="btn" style="margin-top:8px;" onclick="informarPix(this)">Já fiz o Pix</button>';
+      }
+      if (p.aceitaCartao) h += '<button class="btn sec" style="margin-top:8px;" onclick="pagarCartao(false,this)">Pagar com cartão de crédito' + (p.taxaCartao ? ' (' + brl(Math.round(dev.valor * (1 + p.taxaCartao / 100) * 100) / 100) + ')' : '') + '</button>';
+    }
+    h += '<div id="erroPg" class="erro oculto"></div></div>';
+  } else if (p.situacao === 'Pago') h += '<div class="ok">✅ Pedido totalmente pago. Obrigado!</div>';
+  h += '<div class="card"><b>Seu pedido</b><div class="muted" style="white-space:pre-line;margin-top:6px;font-size:13.5px;color:#4a433e;">' + esc(p.itens) + '</div>' +
+    '<div class="linha total" style="margin-top:8px;"><span>Total</span><span>' + brl(p.total) + '</span></div>' +
+    '<div class="linha"><span>Sinal (' + (p.situacao && ['Sinal pago', 'Pix do saldo informado', 'Pago'].indexOf(p.situacao) >= 0 ? 'pago' : 'a pagar') + ')</span><span>' + brl(p.sinal) + '</span></div>' +
+    '<div class="muted" style="margin-top:8px;">📅 ' + (p.data ? esc(dataLonga(p.data)) : '') + (p.horario ? ' às ' + esc(p.horario) : '') + '<br>📍 ' +
+    (p.modo === 'Entrega' ? 'Entrega: ' + esc(p.endereco) : 'Retirada: ' + esc(p.enderecoRetirada)) + (p.obs ? '<br>📝 ' + esc(p.obs) : '') + '</div></div>';
+  if (p.avaliacao) h += '<div class="card" style="text-align:center;"><b>Gostou? 💛</b><div class="muted" style="margin:4px 0 10px;">Sua avaliação ajuda muito a loja.</div><a class="btn" target="_blank" href="' + esc(p.avaliacao) + '">⭐ Avaliar no Google</a></div>';
+  if (p.whatsLoja) h += '<a class="btn zap" target="_blank" href="https://api.whatsapp.com/send?phone=55' + p.whatsLoja + '&text=' + encodeURIComponent('Oi! Sobre minha encomenda ' + p.id + ' (' + p.nome + ').') + '">📲 Falar com a loja' + (p.foto ? '' : ' (enviar foto de referência)') + '</a>';
+  h += '<button class="btn sec" style="margin-top:8px;" onclick="abrirPedido()">↻ Atualizar status</button>';
+  h += '<div class="muted" style="margin-top:12px;">Guarde este link para acompanhar seu pedido.</div>';
+  $('ePedido').innerHTML = h;
+  $('ePedido').classList.remove('oculto');
+  window.scrollTo(0, 0);
+}
+
+function svgQr(t) { var q = qrcode(0, 'M'); q.addData(t); q.make(); return q.createSvgTag(5, 2); }
+function copiarPix() {
+  var t = $('pixCod').textContent;
+  var ok = function () { alert('Código Pix copiado. Cole no app do seu banco em Pix → Copia e cola.'); };
+  if (navigator.clipboard) navigator.clipboard.writeText(t).then(ok, function () { prompt('Copie o código:', t); }); else prompt('Copie o código:', t);
+}
+var COMP = null;
+function lerComprovante(inp) {
+  var f = inp.files && inp.files[0];
+  if (!f) return;
+  if (!/^image\//.test(f.type)) { alert('Envie uma imagem (print ou foto do comprovante).'); inp.value = ''; return; }
+  var img = new Image(), url = URL.createObjectURL(f);
+  img.onload = function () {
+    var k = Math.min(1, 1600 / Math.max(img.width, img.height)), cv = document.createElement('canvas');
+    cv.width = Math.round(img.width * k); cv.height = Math.round(img.height * k);
+    cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height);
+    var du = cv.toDataURL('image/jpeg', 0.85); URL.revokeObjectURL(url);
+    COMP = { tipo: 'image/jpeg', base64: du.split(',')[1] };
+    $('compImg').src = du; $('compPrev').classList.remove('oculto');
+  };
+  img.onerror = function () { alert('Não consegui abrir essa imagem.'); inp.value = ''; };
+  img.src = url;
+}
+function informarPix(b) {
+  b.disabled = true; b.textContent = 'Enviando...';
+  api('lojaInformarPix', [TOKEN, COMP]).then(renderPedido).catch(function (e) { b.disabled = false; b.textContent = 'Já fiz o Pix'; mostrarErro('erroPg', e.message); });
+}
+function pagarCartao(logoAposCriar, b) {
+  if (b) { b.disabled = true; b.textContent = 'Abrindo o Mercado Pago...'; }
+  return api('lojaPagarCartao', [TOKEN]).then(function (r) { location.href = r.url; })
+    .catch(function (e) { if (logoAposCriar) { abrirPedido(); setTimeout(function () { alert(e.message + '\nVocê pode pagar com Pix nesta tela.'); }, 600); } else { if (b) { b.disabled = false; b.textContent = 'Pagar com cartão de crédito'; } mostrarErro('erroPg', e.message); } });
+}
+
+if (TOKEN) abrirPedido(); else iniciar();
+</script>
+</body>
+</html>
