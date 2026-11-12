@@ -639,7 +639,8 @@
   <div class="botoes" style="flex-wrap:wrap;">
     <button class="acao secundario" onclick="cqPular()">Pular</button>
     <button class="acao secundario" onclick="cqSemCodigo()" title="Produto solto, sem embalagem com código">Sem código</button>
-    <button class="acao" onclick="cqSalvar($('cqCodigo').value)">Salvar</button>
+    <button class="acao secundario" onclick="cqSalvar($('cqCodigo').value, true)" title="O código que está na caixa de atacado, não na unidade">É da caixa</button>
+    <button class="acao" onclick="cqSalvar($('cqCodigo').value, false)">Salvar (unidade)</button>
   </div>
   <div class="botoes"><button class="acao secundario" onclick="fecharCodigos()">Fechar</button></div>
 </div></div>
@@ -4661,9 +4662,23 @@ function cqMostrar() {
   $('cqCodigo').value = '';
   if (!ehCelular()) setTimeout(() => $('cqCodigo').focus(), 30);
 }
-function cqSalvar(codigo) {
+// comoCaixa: true = é o código da CAIXA (cada leitura soma as unidades da caixa); false = da unidade; indefinido = pergunta quando o código tem 14 números (padrão de caixa)
+function cqSalvar(codigo, comoCaixa) {
   const p = cqAtual(); if (!p) return false;
   codigo = String(codigo || '').trim().replace(/\s+/g, '');
+  if (comoCaixa === undefined && /^\d{14}$/.test(codigo)) comoCaixa = confirm(`Esse código tem 14 números: é o padrão do código de CAIXA.\n\nOK = salvar como código da caixa de "${p.nome}" (cada leitura soma as unidades da caixa).\nCancelar = é o código da unidade.`);
+  if (comoCaixa) {
+    if (codigo.length < 4) { mostrarMsg('cqMsg', 'Leia ou digite o código de barras da caixa.', false); return false; }
+    let un = Number(p.unidadesCaixa) || 0;
+    if (!(un > 1)) { un = parseInt(prompt(`Quantas unidades vêm na caixa de "${p.nome}"?`, ''), 10) || 0; if (!(un > 1)) { mostrarMsg('cqMsg', 'Informe quantas unidades vêm na caixa (2 ou mais).', false); return false; } }
+    const dono = db.produtos.find(x => x.id !== p.id && !x.inativo && (x.codigo === codigo || x.codigoCaixa === codigo));
+    if (dono || p.codigo === codigo) { mostrarMsg('cqMsg', dono ? `Esse código já é do produto "${dono.nome}".` : 'Esse já é o código da unidade deste produto.', false); return false; }
+    p.codigoCaixa = codigo; p.unidadesCaixa = un; p.atualizado = new Date().toISOString();
+    enfileirar('produto', p); salvarDB();
+    mostrarMsg('cqMsg', `✓ Caixa de ${p.nome}: ${codigo} (${un} un). Falta o código da unidade, se ela tiver.`, true);
+    cq.i++; setTimeout(cqMostrar, 900); sincronizar(false);
+    return true;
+  }
   if (codigo.length < 4) { mostrarMsg('cqMsg', 'Passe a pistola, use a câmera ou digite o número do código de barras.', false); return false; }
   if (/^\d{1,7}$/.test(codigo) && !confirm(`"${codigo}" é curto: código de barras tem 8 a 13 números. Salvar assim mesmo?`)) return false;
   const dono = db.produtos.find(x => x.id !== p.id && !x.inativo && (x.codigo === codigo || x.codigoCaixa === codigo));
@@ -4678,7 +4693,7 @@ function cqPular() { cq.i++; cqMostrar(); }
 function cqSemCodigo() { const p = cqAtual(); if (!p) return; p.semCodigo = true; salvarDB(); cq.i++; cqMostrar(); }
 function cqCamera() {
   const p = cqAtual(); if (!p) return;
-  abrirCamera(codigo => { $('cqCodigo').value = codigo; cqSalvar(codigo); return ''; }, { titulo: '📷 ' + p.nome });
+  abrirCamera(codigo => { $('cqCodigo').value = codigo; cqSalvar(codigo); return ''; }, { titulo: '📷 ' + p.nome + ' (embalagem da unidade; para a caixa use o botão "É da caixa")' });
 }
 function fecharCodigos() { fecharModal('modalCodigos'); renderProdutos(); }
 

@@ -1,7 +1,7 @@
 // Guarda as páginas do site para abrirem mesmo sem internet.
 // Sempre tenta a versão nova primeiro; sem conexão, usa a cópia guardada.
 // Chamadas para a planilha (script.google.com) não passam por aqui.
-const CACHE = 'loja-v15';
+const CACHE = 'loja-v16';
 const ARQUIVOS = ['./', 'index.html', 'pdv.html', 'encomenda.html', 'icone.svg', 'icone-192.png', 'icone-512.png', 'manifest.webmanifest'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(ARQUIVOS)).then(() => self.skipWaiting())); });
 self.addEventListener('activate', e => {
