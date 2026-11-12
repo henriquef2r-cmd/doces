@@ -303,7 +303,7 @@
   <!-- ===================== PRODUTOS ===================== -->
   <div class="painel" id="painel-produtos">
     <div class="card" id="cardCodigosPend" style="display:none;background:#FFF8EC;border:1px solid #F1D9A8;">
-      <h2>🔖 <span id="cpCont">0</span> produto(s) ainda sem código de barras</h2>
+      <h2>🔖 <span id="cpCont">0</span> produto(s) sem código de barras de verdade</h2>
       <p class="ajuda" style="margin-bottom:10px;">O <b>código de barras</b> é o número impresso embaixo das barrinhas da embalagem. Quando você cadastra o código de um produto, basta passar a pistola ou a câmera na venda e ele entra no carrinho sozinho. Produtos soltos (sem embalagem, como a paçoca) não têm código: venda pela vitrine ou pelo botão rápido.</p>
       <button class="acao" onclick="abrirCodigos()">Cadastrar códigos agora</button>
     </div>
@@ -373,6 +373,14 @@
       <table><thead><tr><th>Produto</th><th>Estoque</th><th>Vendeu em 14 dias</th><th>Comprar</th><th>Custo</th></tr></thead><tbody id="tabelaCompras"></tbody></table>
       <div id="lcBotoes" style="display:none;gap:8px;margin-top:10px;flex-wrap:wrap;"><button class="acao" onclick="enviarListaCompras(true)">Enviar no WhatsApp</button><button class="acao secundario" onclick="enviarListaCompras(false)">Copiar</button></div>
       <div id="lcMsg" class="msg" style="margin-top:8px;"></div>
+    </details>
+
+    <details class="card dobra" id="cardCombosSug" open>
+      <summary><h2>✨ Combos sugeridos pelo sistema</h2></summary>
+      <p class="ajuda" style="margin:8px 0;">O sistema olha custo, preço e estoque de cada produto e propõe "leve N por R$ X" e combos de produtos diferentes, sempre com preço redondo e margem de pelo menos 30%. Você muda o preço se quiser (a margem recalcula) e toca em <b>Aprovar</b>: o desconto passa a valer no caixa de todos os aparelhos. Quanto mais vendas o sistema tiver, mais ele prioriza o que vende.</p>
+      <table><tbody id="listaCombosSug"></tbody></table>
+      <div id="csVazio" class="vazio">Nenhuma sugestão agora. Cadastre custo e preço dos produtos com estoque para o sistema calcular.</div>
+      <button class="acao secundario" style="margin-top:8px;padding:5px 10px;font-size:12px;" onclick="restaurarCombosIgnorados()">Mostrar de novo as que ignorei</button>
     </details>
 
     <details class="card dobra">
@@ -4458,7 +4466,7 @@ function cfSimilar(a,b){a=cfNorm(a);b=cfNorm(b);if(!a||!b)return 0;if(a===b)retu
 function cfEncontrar(it){const ativos=produtosAtivos();const cod=String(it.ean||it.codigo||'').trim();return ativos.find(p=>cod&&(String(p.codigo||'')===cod||String(p.ean||'')===cod))||ativos.find(p=>cfNorm(p.nome)===cfNorm(it.nome))||null;}
 function cfSugerirCorrespondencia(it){const exato=cfEncontrar(it);if(exato)return {produto:exato,score:1,exato:true};let melhor=null,score=0;produtosAtivos().forEach(p=>{const n=cfSimilar(it.nome,p.nome);if(n>score){score=n;melhor=p;}});return score>=0.58?{produto:melhor,score,exato:false}:null;}
 function abrirRevisaoCompraFiscal(d){compraFiscalEmRevisao=d;const ids=d.itens.map((it,i)=>{const sug=cfSugerirCorrespondencia(it);it._score=sug?sug.score:0;it._exato=sug?sug.exato:false;return sug?sug.produto.id:'';});d.itens.forEach((it,i)=>it._match=ids[i]);$('cfFornecedor').value=d.fornecedor||'';$('cfCnpj').value=d.cnpj||'';$('cfNumero').value=d.numero||'';$('cfData').value=d.data||'';$('cfChave').value=d.chave||d.id||'';$('cfTotal').value=Number(d.total)||'';$('cfFrete').value=Number(d.frete)||0;$('cfDesconto').value=Number(d.desconto)||'';$('cfRatearDesconto').checked=false;$('cfLancarDespesa').checked=true;d.itens.forEach(it=>{it._custoOrig=Number(it.custo)||0;});$('cfPoliticaCusto').value='ultimo';$('cfAplicarSugestoes').checked=false;$('cfRatearFrete').checked=false;$('cfResumo').textContent=`Arquivo: ${d.arquivo||'JSON'} · Origem: ${d.origem||'Importação'} · ${d.itens.length} linha(s). Confira os dados antes de confirmar.`;$('cfAvisos').textContent=(d.textoOCR?'Leitura por OCR: os campos foram inferidos do texto e precisam de conferência manual.':'Confira principalmente quantidades, EAN e custo unitário.')+((d.avisosLeitura||[]).length?' '+d.avisosLeitura.join(' '):'');
- $('cfItens').innerHTML=d.itens.map((it,i)=>{const opts=['<option value="">Cadastrar como produto novo</option>'].concat(produtosAtivos().map(p=>`<option value="${esc(p.id)}" ${p.id===it._match?'selected':''}>${esc(p.nome)} · ${esc(p.codigo||'sem código')}</option>`)).join('');return `<tr><td><input data-cf="nome" data-i="${i}" value="${esc(it.nome||'')}" style="min-width:180px">${it._alerta?`<div class="cf-alerta" style="color:#b3261e;font-size:11px;margin-top:2px">⚠ ${esc(it._alerta)}</div>`:''}</td><td><input data-cf="ean" data-i="${i}" value="${esc(it.ean||it.codigoFornecedor||it.codigo||'')}" style="width:110px"></td><td><input data-cf="qtd" data-i="${i}" type="number" min="0.001" step="0.001" value="${Number(it.qtd)||0}" style="width:75px"></td><td><input data-cf="unidade" data-i="${i}" value="${esc(it.unidade||'UN')}" style="width:55px"></td><td><input data-cf="multiplicador" data-i="${i}" type="number" min="0.001" step="0.001" value="${Number(it.multiplicador)||1}" style="width:75px" title="Unidades individuais que compõem a embalagem"></td><td><input data-cf="custo" data-i="${i}" type="number" min="0" step="0.0001" value="${Number(it.custo)||0}" style="width:90px"></td><td><input data-cf="desconto" data-i="${i}" type="number" min="0" step="0.01" value="${Number(it.desconto)||0}" style="width:75px"></td><td><select data-cf="match" data-i="${i}" style="min-width:200px">${opts}</select></td><td><span id="cfSug${i}">${brl(precoSugerido((Number(it.custo)||0)/(Number(it.multiplicador)||1)))}</span></td></tr>`;}).join('');$('cfRatearDesconto').checked=(Number(d.desconto)>0&&!d.itens.some(i=>Number(i.desconto)>0));cfAplicarRateioDesconto();$('modalCompraFiscal').style.display='block';}
+ $('cfItens').innerHTML=d.itens.map((it,i)=>{const opts=['<option value="">Cadastrar como produto novo</option>'].concat(produtosAtivos().map(p=>`<option value="${esc(p.id)}" ${p.id===it._match?'selected':''}>${esc(p.nome)} · ${esc(p.codigo||'sem código')}</option>`)).join('');return `<tr><td><input data-cf="nome" data-i="${i}" value="${esc(it.nome||'')}" style="min-width:180px">${it._alerta?`<div class="cf-alerta" style="color:#b3261e;font-size:11px;margin-top:2px">⚠ ${esc(it._alerta)}</div>`:''}</td><td><input data-cf="ean" data-i="${i}" value="${esc(it.ean||'')}" placeholder="${esc(it.codigoFornecedor?'forn. '+it.codigoFornecedor:'sem código')}" title="Código de barras da embalagem. O código interno do fornecedor${it.codigoFornecedor?' ('+esc(it.codigoFornecedor)+')':''} não serve no caixa." style="width:110px"></td><td><input data-cf="qtd" data-i="${i}" type="number" min="0.001" step="0.001" value="${Number(it.qtd)||0}" style="width:75px"></td><td><input data-cf="unidade" data-i="${i}" value="${esc(it.unidade||'UN')}" style="width:55px"></td><td><input data-cf="multiplicador" data-i="${i}" type="number" min="0.001" step="0.001" value="${Number(it.multiplicador)||1}" style="width:75px" title="Unidades individuais que compõem a embalagem"></td><td><input data-cf="custo" data-i="${i}" type="number" min="0" step="0.0001" value="${Number(it.custo)||0}" style="width:90px"></td><td><input data-cf="desconto" data-i="${i}" type="number" min="0" step="0.01" value="${Number(it.desconto)||0}" style="width:75px"></td><td><select data-cf="match" data-i="${i}" style="min-width:200px">${opts}</select></td><td><span id="cfSug${i}">${brl(precoSugerido((Number(it.custo)||0)/(Number(it.multiplicador)||1)))}</span></td></tr>`;}).join('');$('cfRatearDesconto').checked=(Number(d.desconto)>0&&!d.itens.some(i=>Number(i.desconto)>0));cfAplicarRateioDesconto();$('modalCompraFiscal').style.display='block';}
 function fecharCompraFiscal(){$('modalCompraFiscal').style.display='none';compraFiscalEmRevisao=null;}
 function cfLerEdicoes(){const d=compraFiscalEmRevisao;document.querySelectorAll('[data-cf]').forEach(el=>{const i=Number(el.dataset.i),k=el.dataset.cf;if(k==='match')d.itens[i]._match=el.value;else d.itens[i][k]=k==='qtd'||k==='custo'||k==='desconto'||k==='multiplicador'?cfNum(el.value):el.value;});}
 async function cfApiFiscal(acao,nota){if(!db.config.url||!db.config.token)return {ok:false,erro:'PDV sem conexão com a planilha.'};const r=await fetch(db.config.url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({token:db.config.token,acao,id:nota&&nota.id,nota})});return await r.json();}
@@ -4467,7 +4475,7 @@ async function confirmarCompraFiscal(){if(!compraFiscalEmRevisao)return;cfLerEdi
  const agora=new Date().toISOString(),politica=$('cfPoliticaCusto').value,aplicarPreco=$('cfAplicarSugestoes').checked,ratearFrete=$('cfRatearFrete').checked,frete=cfNum($('cfFrete').value);let novos=0,existentes=0,totalUn=0;const novosProdutos=[];const baseTotal=itens.reduce((s,i)=>s+(Number(i.total)||Number(i.qtd)*Number(i.custo)||0),0);
  for(const it of itens){const mult=Number(it.multiplicador)||1,qtd=Number(it.qtd)*mult,freteItem=ratearFrete&&baseTotal>0?frete*((Number(it.total)||Number(it.qtd)*Number(it.custo)||0)/baseTotal):0,custo=((Number(it.custo)||0)+freteItem/(Number(it.qtd)||1))/mult;it._qtdEstoque=qtd;it._custoUnitarioPDV=custo;let p=db.produtos.find(x=>x.id===it._match);if(!p)p=cfEncontrar(it);
   if(p){it._produtoId=p.id;const estoqueAntigo=Number(p.estoque)||0;p.estoque=estoqueAntigo+qtd;if(custo>0){if(politica==='ultimo')p.custo=custo;else if(politica==='medio')p.custo=((estoqueAntigo*(Number(p.custo)||0))+(qtd*custo))/(estoqueAntigo+qtd||1);}if(aplicarPreco&&custo>0)p.preco=precoSugerido(custo);existentes++;}
-  else{const cat='';p={id:novoId('P'),codigo:String(it.ean||codigoProvisorio()),nome:String(it.nome).trim(),preco:precoSugerido(custo),custo,estoque:qtd,minimo:Math.max(2,Math.ceil(qtd/3)),categoria:cat,validade:'',fornecedor:$('cfFornecedor').value.trim(),codigoCaixa:'',unidadesCaixa:'',inativo:false,atalho:false,promoPreco:'',promoAte:'',leveQtd:'',levePreco:'',ean:String(it.ean||''),atualizado:agora};db.produtos.push(p);it._produtoId=p.id;novos++;novosProdutos.push(p);}
+  else{const cat='';p={id:novoId('P'),codigo:String(it.ean||codigoProvisorio()),nome:String(it.nome).trim(),preco:precoSugerido(custo),custo,estoque:qtd,minimo:Math.max(2,Math.ceil(qtd/3)),categoria:cat,validade:'',fornecedor:$('cfFornecedor').value.trim(),codigoCaixa:'',unidadesCaixa:(Number(it.multiplicador)>1?Number(it.multiplicador):''),inativo:false,atalho:false,promoPreco:'',promoAte:'',leveQtd:'',levePreco:'',ean:String(it.ean||''),atualizado:agora};db.produtos.push(p);it._produtoId=p.id;novos++;novosProdutos.push(p);}
   p.atualizado=agora;enfileirar('produto',p);totalUn+=qtd;
  }
  const compraId=chave;db.comprasImportadas.push(compraId);db.comprasImportadas=db.comprasImportadas.slice(-1000);db.historicoCompras=db.historicoCompras||[];const notaHistorico={id:compraId,fornecedor:$('cfFornecedor').value,cnpj:$('cfCnpj').value,numero:$('cfNumero').value,data:$('cfData').value,chave,arquivo:d.arquivo||'',total:cfNum($('cfTotal').value),frete:cfNum($('cfFrete').value),desconto:cfNum($('cfDesconto').value),pago:cfNum($('cfTotal').value),lancarDespesa:$('cfLancarDespesa').checked,itens:itens.map(i=>({nome:i.nome,ean:i.ean||'',codigoFornecedor:i.codigoFornecedor||i.codigo||'',codigo:i.ean||i.codigo||'',qtd:Number(i.qtd),unidade:i.unidade,multiplicador:Number(i.multiplicador)||1,unidadesEstoque:Number(i._qtdEstoque)||Number(i.qtd),custoDocumento:Number(i.custo),custoUnitarioPDV:Number(i._custoUnitarioPDV)||Number(i.custo),desconto:Number(i.desconto),produtoId:i._produtoId||i._match||''})),registrada:agora,status:'APLICADA_LOCAL'};db.historicoCompras.push(notaHistorico);db.historicoCompras=db.historicoCompras.slice(-1000);salvarDB();let statusCentral='reserva criada, mas registro final pendente';try{const rr=await cfApiFiscal('registrarNotaFiscal',notaHistorico);if(rr.ok&&rr.resultado&&rr.resultado.registrada){notaHistorico.status='REGISTRADA_CENTRAL';statusCentral='registrada no histórico da planilha'+(rr.resultado.despesaLancada?` e despesa de ${brl(rr.resultado.valorDespesa)} lançada no FINANCEIRO`:'');}else if(rr.ok&&rr.resultado&&rr.resultado.duplicada){notaHistorico.status='DUPLICIDADE_CENTRAL';statusCentral='já existente no histórico central';}}catch(e){}db.historicoCompras[db.historicoCompras.length-1]=notaHistorico;salvarDB();renderProdutos();renderAtalhos();fecharCompraFiscal();mostrarMsg('msgEntrada',`Entrada confirmada: ${novos} produto(s) novo(s), ${existentes} existente(s), ${totalUn} unidade(s). Estoque atualizado neste PDV; sincronização iniciada. Documento ${statusCentral}. Confira os preços sugeridos no catálogo.`,true);sincronizar(false);
@@ -4633,13 +4641,13 @@ function abrirCameraVenda() {
 function lerCodigoNoCampo(id) { abrirCamera(codigo => { $(id).value = codigo; if (id === 'eCodigo') rotuloEntrada(); return `✓ ${codigo}`; }, { titulo: '📷 Ler código de barras' }); }
 
 // ── fila de códigos de barras: produtos que entraram com código provisório ──
-const ehCodigoProvisorio = p => /^SC\d{6}$/.test(String(p.codigo)) && !p.semCodigo;
+const ehCodigoProvisorio = p => (/^SC\d{6}$/.test(String(p.codigo)) || /^\d{1,7}$/.test(String(p.codigo))) && !p.semCodigo;   // provisório do sistema, ou número curto (código interno do fornecedor): não é código de barras
 function pendentesCodigo() { return produtosAtivos().filter(ehCodigoProvisorio).sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR')); }
 function atualizarCardCodigos() { const n = pendentesCodigo().length; $('cardCodigosPend').style.display = n ? 'block' : 'none'; $('cpCont').textContent = n; }
 const cq = { fila: [], i: 0, total: 0 };
 function abrirCodigos() {
   cq.fila = pendentesCodigo().map(p => p.id); cq.total = cq.fila.length; cq.i = 0;
-  if (!cq.total) { alert('Nenhum produto com código provisório.'); return; }
+  if (!cq.total) { alert('Nenhum produto com código provisório ou curto.'); return; }
   abrirModal('modalCodigos'); cqMostrar();
 }
 function cqAtual() { return db.produtos.find(p => p.id === cq.fila[cq.i]); }
@@ -4649,7 +4657,7 @@ function cqMostrar() {
   $('cqMsg').className = 'msg';
   if (fim) { $('cqProgresso').textContent = ''; $('cqProduto').textContent = '✅ Fila terminada.'; renderProdutos(); return; }
   $('cqProgresso').textContent = `Produto ${cq.i + 1} de ${cq.total}`;
-  $('cqProduto').innerHTML = esc(p.nome) + ' <span class="ajuda">' + brl(p.preco) + '</span>';
+  $('cqProduto').innerHTML = esc(p.nome) + ' <span class="ajuda">' + brl(p.preco) + '</span>' + (/^\d{1,7}$/.test(String(p.codigo)) ? `<div class="ajuda" style="font-weight:400;">Hoje o código é "${esc(p.codigo)}": é um número curto, provavelmente do fornecedor. O código de barras tem 8 a 13 números.</div>` : '');
   $('cqCodigo').value = '';
   if (!ehCelular()) setTimeout(() => $('cqCodigo').focus(), 30);
 }
@@ -4657,6 +4665,7 @@ function cqSalvar(codigo) {
   const p = cqAtual(); if (!p) return false;
   codigo = String(codigo || '').trim().replace(/\s+/g, '');
   if (codigo.length < 4) { mostrarMsg('cqMsg', 'Passe a pistola, use a câmera ou digite o número do código de barras.', false); return false; }
+  if (/^\d{1,7}$/.test(codigo) && !confirm(`"${codigo}" é curto: código de barras tem 8 a 13 números. Salvar assim mesmo?`)) return false;
   const dono = db.produtos.find(x => x.id !== p.id && !x.inativo && (x.codigo === codigo || x.codigoCaixa === codigo));
   if (dono) { mostrarMsg('cqMsg', `Esse código já é do produto "${dono.nome}". Confira se é o produto certo.`, false); return false; }
   p.codigo = codigo; p.atualizado = new Date().toISOString();
@@ -5028,8 +5037,6 @@ function calcularSugestoes() {
       if (lv / 3 > custo * 1.2) out.push({ tipo: '📦 Vender mais', p, texto: `Margem boa (${Math.round(m)}%) e giro lento (${g} em 30 dias, ${p.estoque} em estoque). "Leve 3 por ${brl(lv)}".`, acao: 'Aplicar "leve 3"', mud: { leveQtd: 3, levePreco: lv }, ordem: 60 });
     }
   });
-  top.forEach((p, k) => { if (k === 0) { const par = produtosAtivos().filter(x => x.id !== p.id && x.estoque > 0 && Number(x.custo) > 0 && pctMargem(x.preco, x.custo) >= 45).sort((a, b) => (g30[a.id] || 0) - (g30[b.id] || 0))[0];
-    if (par) out.push({ tipo: '🎁 Combo', p, texto: `"${p.nome}" é o mais vendido. Monte um combo com "${par.nome}" (margem alta, vende pouco) por ${brl(arred5((p.preco + par.preco) * 0.9))}.`, acao: 'Criar combo', combo: { nome: p.nome.split(' ')[0] + ' + ' + par.nome.split(' ')[0], itens: [{ id: p.id, qtd: 1 }, { id: par.id, qtd: 1 }], preco: arred5((p.preco + par.preco) * 0.9) }, ordem: 70 }); } });
   return out.sort((a, b) => a.ordem - b.ordem).slice(0, 25);
 }
 function renderSugestoes() {
@@ -5082,7 +5089,7 @@ async function restaurarCopia(k) {
   if (!confirm(`Voltar os dados deste aparelho para como estavam em ${k.split('-').reverse().join('/')}? O que foi feito depois e ainda não foi para a planilha se perde.`)) return;
   const bd = await idbCopias(); bd.transaction('copias').objectStore('copias').get(k).onsuccess = e => { if (!e.target.result) return; localStorage.setItem(DB_KEY, e.target.result); db = carregarDB(); salvarDB(); carregarConfigNaTela(); renderEstadoCaixa(); mostrarMsg('msgBackup', 'Cópia restaurada.', true); };
 }
-function renderExtrasProdutos() { renderListaCompras(); renderPromos(); if ($('hrAlvos')) $('hrAlvos').innerHTML = [...new Set(db.produtos.map(p => p.categoria).filter(Boolean))].concat(produtosAtivos().map(p => p.nome)).map(c => `<option value="${esc(c)}">`).join(''); const dl = $('listaNomesProdutos'); if (dl && $('cbNomes')) $('cbNomes').innerHTML = dl.innerHTML; }
+function renderExtrasProdutos() { renderListaCompras(); renderCombosSugeridos(); renderPromos(); if ($('hrAlvos')) $('hrAlvos').innerHTML = [...new Set(db.produtos.map(p => p.categoria).filter(Boolean))].concat(produtosAtivos().map(p => p.nome)).map(c => `<option value="${esc(c)}">`).join(''); const dl = $('listaNomesProdutos'); if (dl && $('cbNomes')) $('cbNomes').innerHTML = dl.innerHTML; }
 
 // ============================================================
 // FASE 4: venda por peso, operadores, fidelidade, etiquetas e cartazes, impressora de recibo,
@@ -5318,6 +5325,89 @@ async function salvarFidelidade() {
   mostrarMsg('msgFidelidade', fidelidadeCfg() ? 'Fidelidade ligada.' : 'Fidelidade desligada.', true);
 }
 
+// ── combos sugeridos automaticamente: o sistema calcula, você aprova ou ajusta o preço ──
+const MARGEM_COMBO = 30;   // % mínima de margem (sobre o preço) para o sistema sugerir
+function bonito(x) { return x < 10 ? Math.floor(x * 2 + 1e-9) / 2 : Math.floor(x + 1e-9); }   // total "redondo": de 0,50 em 0,50 até R$ 10; depois reais inteiros
+function ignorados() { return db.config.combosIgnorados = db.config.combosIgnorados || []; }
+// tipo do produto: usa a categoria cadastrada; sem categoria, adivinha pelo nome (para o combo juntar coisas diferentes: salgadinho + bala)
+function grupoProduto(p) {
+  if (cfNorm(p.categoria)) return cfNorm(p.categoria);
+  const n = cfNorm(p.nome);
+  if (/salgad|doritos|cheetos|torcida|batatinh|chips|fandangos|ruffles|fritop|presunto|requeij|pipoca|bacon/.test(n)) return 'salgadinhos';
+  if (/halls|trident|chicle|bubbaloo|bala|goma|pirulito|tubes|fini|mentos|marsh|drops|dentadura/.test(n)) return 'balas';
+  if (/chocolate|bombom|trento|barra de cereal|bis |nucita|garoto|lacta|nestle|trufa/.test(n)) return 'chocolates';
+  if (/pacoca|pacoquita|pe de moleque|doce de leite|chupao|pingo|rolha|cocada/.test(n)) return 'doces';
+  return 'outros';
+}
+function nomeCurto(p) { const w = String(p.nome).split(' '), i = w.findIndex(x => /\d/.test(x)); return w.slice(0, Math.min(i > 0 ? i : 3, 3)).join(' '); }
+function candidatoParaCombo(p) { return !p.inativo && !p.porPeso && p.estoque > 0 && Number(p.custo) > 0 && Number(p.preco) > Number(p.custo) && !temLeve(p) && !promoFixa(p); }
+function gerarCombosSugeridos() {
+  const out = [], g = vendidoNoPeriodo(60), temVendas = Object.keys(g).length > 0;
+  const lista = produtosAtivos().filter(candidatoParaCombo);
+  const marg = (preco, custo) => pctMargem(preco, custo);
+  // 1) "leve N por R$ X" no mesmo produto: o melhor N entre 2, 3 e 4 que mantém a margem
+  lista.forEach(p => {
+    const preco = Number(p.preco), custo = Number(p.custo); let melhor = null;
+    (preco <= 3.5 ? [2, 3, 4] : preco <= 8 ? [2, 3] : [2]).forEach(n => {   // produto mais caro: quantidade menor
+      if (n * preco > 40) return;
+      for (const f of [0.88, 0.92, 0.95]) {
+        const T = bonito(n * preco * f);
+        if (T < n * preco - 0.0001 && (n * preco - T) / (n * preco) >= 0.05 && marg(T / n, custo) >= MARGEM_COMBO) { const luc = T - n * custo; if (!melhor || luc > melhor.luc) melhor = { n, T, luc, marg: marg(T / n, custo) }; break; }
+      }
+    });
+    if (melhor) out.push({ id: 'L' + p.id, tipo: 'leve', p, n: melhor.n, preco: melhor.T, normal: melhor.n * preco, custo: melhor.n * custo, lucroSo: preco - custo, vendas: g[p.id] || 0,
+      texto: `${p.nome}: leve ${melhor.n} por ${brl(melhor.T)} (${brl(melhor.T / melhor.n)} cada, em vez de ${brl(preco)})`, nome: p.nome });
+  });
+  // 2) combo de produtos diferentes: um produto que vende (ou tem mais estoque) + um de outra categoria com margem alta
+  const ancoras = lista.slice().sort((a, b) => (temVendas ? (g[b.id] || 0) - (g[a.id] || 0) : b.estoque * b.custo - a.estoque * a.custo)).slice(0, 8);
+  const usados = new Set(), existentes = (db.extras.combos || []).map(c => c.itens.map(i => i.id).sort().join('+'));
+  ancoras.forEach(a => {
+    const par = lista.filter(q => q.id !== a.id && grupoProduto(q) !== grupoProduto(a) && grupoProduto(q) !== 'outros' && !usados.has(q.id) && marg(q.preco, q.custo) >= 40)
+      .filter(q => { const s = Number(a.preco) + Number(q.preco); return s >= 3 && s <= 25 && Math.min(Number(a.preco), Number(q.preco)) >= 1; })   // sem juntar um item de R$ 0,50 que viraria "brinde"
+      .sort((x, y) => (temVendas ? (g[x.id] || 0) - (g[y.id] || 0) : 0) || marg(y.preco, y.custo) - marg(x.preco, x.custo))[0];
+    if (!par) return;
+    const chave = [a.id, par.id].sort().join('+'); if (existentes.includes(chave) || out.some(o => o.id === 'M' + chave)) return;   // o mesmo par não aparece duas vezes
+    const soma = Number(a.preco) + Number(par.preco), custo = Number(a.custo) + Number(par.custo);
+    let T = null; for (const f of [0.9, 0.93, 0.96]) { const x = bonito(soma * f); if (x < soma - 0.0001 && x >= Math.max(Number(a.preco), Number(par.preco)) * 1.15 && marg(x, custo) >= MARGEM_COMBO) { T = x; break; } }
+    if (T == null) return;
+    usados.add(par.id);
+    out.push({ id: 'M' + chave, tipo: 'mix', a, p: par, preco: T, normal: soma, custo, lucroSo: Number(a.preco) - Number(a.custo), vendas: (g[a.id] || 0) + (g[par.id] || 0), nome: `${a.nome} + ${par.nome}`,
+      texto: `${a.nome} + ${par.nome} por ${brl(T)} (separados: ${brl(soma)})` });
+  });
+  const ord = (x, y) => (y.vendas - x.vendas) || ((y.preco - y.custo) - (x.preco - x.custo));
+  const vivos = out.filter(c => !ignorados().includes(c.id)), mix = vivos.filter(c => c.tipo === 'mix').sort(ord).slice(0, 5), leve = vivos.filter(c => c.tipo === 'leve').sort(ord).slice(0, 8);
+  const r = []; for (let i = 0; i < Math.max(mix.length, leve.length); i++) { if (mix[i]) r.push(mix[i]); if (leve[i]) r.push(leve[i]); if (leve[i + 1] && i % 2) { /* mantém a mistura */ } }
+  return r;
+}
+let combosSug = [];
+function renderCombosSugeridos() {
+  if (!$('listaCombosSug')) return;
+  combosSug = gerarCombosSugeridos();
+  $('listaCombosSug').innerHTML = combosSug.map((c, k) => {
+    const m = pctMargem(c.preco, c.custo), desc = Math.round((1 - c.preco / c.normal) * 100);
+    return `<tr id="cs${k}"><td><b>${c.tipo === 'leve' ? '🔁' : '🎁'} ${esc(c.texto)}</b><br><span class="ajuda">Desconto de ${desc}% · custo ${brl(c.custo)} · <span id="csM${k}">margem ${Math.round(m)}% · lucro ${brl(c.preco - c.custo)}</span>${c.tipo === 'leve' ? ` · quem leva 1 deixa ${brl(c.lucroSo)} de lucro; levando ${c.n} deixa ${brl(c.preco - c.custo)}` : ` · só o ${esc(c.a.nome)} deixa ${brl(c.lucroSo)}; no combo deixa ${brl(c.preco - c.custo)}`}</span></td>
+      <td style="white-space:nowrap;"><div style="display:flex;gap:4px;align-items:center;margin-bottom:6px;"><span class="ajuda">R$</span><input id="csP${k}" type="number" step="0.5" inputmode="decimal" value="${c.preco}" style="width:80px;padding:5px;" oninput="atualizarMargemCombo(${k})"></div>
+      <button class="acao verde" style="padding:5px 10px;" onclick="aprovarComboSug(${k})">Aprovar</button> <button class="acao secundario" style="padding:5px 10px;" onclick="ignorarComboSug(${k})">Ignorar</button></td></tr>`;
+  }).join('');
+  $('csVazio').style.display = combosSug.length ? 'none' : 'block';
+}
+function atualizarMargemCombo(k) {
+  const c = combosSug[k], v = parseFloat($('csP' + k).value) || 0, el = $('csM' + k); if (!c || !el) return;
+  const m = pctMargem(v, c.custo);
+  el.innerHTML = v >= c.normal ? '<b style="color:var(--vermelho)">precisa ser menor que o preço normal (' + brl(c.normal) + ')</b>' : `margem <b style="color:${m < MARGEM_MINIMA ? 'var(--vermelho)' : 'inherit'}">${Math.round(m)}%${m < MARGEM_MINIMA ? ' ⚠️' : ''}</b> · lucro ${brl(v - c.custo)}`;
+}
+async function aprovarComboSug(k) {
+  const c = combosSug[k]; if (!c) return;
+  const v = r2(parseFloat($('csP' + k).value));
+  if (!(v > 0) || v >= c.normal - 0.0001) { atualizarMargemCombo(k); return; }
+  if (pctMargem(v, c.custo) < MARGEM_MINIMA && !confirm(`⚠️ Com ${brl(v)} a margem fica em ${Math.round(pctMargem(v, c.custo))}% (lucro ${brl(v - c.custo)}). Aprovar assim mesmo?`)) return;
+  if (!(await exigirPin('aprovar combo'))) return;
+  if (c.tipo === 'leve') { const p = db.produtos.find(x => x.id === c.p.id); Object.assign(p, { leveQtd: c.n, levePreco: v, atualizado: new Date().toISOString() }); enfileirar('produto', Object.assign({}, p, { semEstoque: true })); salvarDB(); sincronizar(false); }
+  else setExtra('combos', (db.extras.combos || []).concat([{ id: novoId('CB'), nome: nomeCurto(c.a) + ' + ' + nomeCurto(c.p), itens: [{ id: c.a.id, qtd: 1 }, { id: c.p.id, qtd: 1 }], preco: v, ativo: true }]));
+  mostrarToast('✓ Combo aprovado e já vale no caixa'); renderCombosSugeridos(); renderPromos(); renderAtalhos(); renderVitrine(); renderProdutos();
+}
+function ignorarComboSug(k) { const c = combosSug[k]; if (!c) return; ignorados().push(c.id); salvarDB(); renderCombosSugeridos(); }
+function restaurarCombosIgnorados() { db.config.combosIgnorados = []; salvarDB(); renderCombosSugeridos(); }
 function exportarBackup() {
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([JSON.stringify(db, null, 2)], { type: 'application/json' }));
