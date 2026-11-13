@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Bomboniere</title>
+<meta name="theme-color" content="#6B4226">
+<link rel="icon" href="icone.svg">
+<style>
+  :root{--azul:#6B4226;--azul-claro:#F3E9E1;--verde:#2e7d32;--vermelho:#b3261e;--bg:#F8F4F0;--borda:#E2D6CC;--texto:#3B2A20;--suave:#7a6a5c;}
+  *{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,'Segoe UI',Roboto,sans-serif;-webkit-tap-highlight-color:transparent;}
+  body{background:var(--bg);color:var(--texto);padding-bottom:calc(96px + env(safe-area-inset-bottom));}
+  header{background:var(--azul);color:#fff;padding:calc(20px + env(safe-area-inset-top)) 16px 14px;}
+  header h1{font-size:21px;} header p{font-size:13px;opacity:.88;margin-top:3px;}
+  .barra{position:sticky;top:0;z-index:5;background:var(--bg);padding:10px 14px 8px;box-shadow:0 2px 6px #0001;}
+  .barra input{width:100%;padding:12px 14px;border:1.5px solid var(--borda);border-radius:12px;font-size:16px;background:#fff;color:var(--texto);}
+  .chips{display:flex;gap:6px;overflow-x:auto;padding:8px 0 2px;scrollbar-width:none;} .chips::-webkit-scrollbar{display:none;}
+  .chip{flex:0 0 auto;border:1.5px solid var(--borda);background:#fff;color:var(--texto);border-radius:20px;padding:7px 13px;font-size:13.5px;font-weight:600;cursor:pointer;}
+  .chip.on{background:var(--azul);color:#fff;border-color:var(--azul);}
+  main{max-width:640px;margin:0 auto;padding:6px 14px;}
+  h2{font-size:14px;color:var(--azul);margin:16px 2px 8px;text-transform:uppercase;letter-spacing:.04em;}
+  .item{background:#fff;border-radius:14px;padding:12px 14px;margin-bottom:8px;display:flex;gap:10px;align-items:center;box-shadow:0 1px 3px #0000000d;}
+  .item .info{flex:1;min-width:0;} .nome{font-weight:700;font-size:15px;line-height:1.25;}
+  .preco{font-size:17px;font-weight:800;color:var(--azul);margin-top:3px;} .preco s{font-size:12.5px;color:#999;font-weight:500;margin-right:4px;}
+  .tag{display:inline-block;font-size:11.5px;font-weight:700;border-radius:8px;padding:2px 8px;margin:4px 4px 0 0;background:#FFF3E0;color:#8a4b00;} .tag.verde{background:#E8F5E9;color:#1B5E20;} .tag.aviso{background:#FDECEA;color:#8c1d18;}
+  .sub{font-size:12px;color:var(--suave);margin-top:3px;line-height:1.35;}
+  .qtd{display:flex;align-items:center;gap:6px;flex-shrink:0;} .qtd button{width:40px;height:40px;border-radius:12px;border:none;font-size:22px;font-weight:700;background:var(--azul-claro);color:var(--azul);}
+  .qtd button.mais{background:var(--azul);color:#fff;} .qtd b{min-width:34px;text-align:center;font-size:15px;}
+  .vazio{text-align:center;color:var(--suave);padding:40px 10px;font-size:14px;line-height:1.5;}
+  .rodape{max-width:640px;margin:14px auto 0;padding:0 14px;font-size:12px;color:var(--suave);line-height:1.5;text-align:center;}
+  .rodape a{color:var(--azul);font-weight:700;}
+  .carrinho{position:fixed;left:0;right:0;bottom:0;z-index:8;background:var(--azul);color:#fff;padding:10px 14px calc(10px + env(safe-area-inset-bottom));display:none;}
+  .carrinho.on{display:block;} .carrinho .lin{max-width:640px;margin:0 auto;display:flex;align-items:center;gap:12px;} .carrinho .tot{flex:1;font-size:14px;} .carrinho .tot b{display:block;font-size:19px;}
+  button.grande{border:none;border-radius:12px;padding:13px 18px;font-size:16px;font-weight:800;background:#fff;color:var(--azul);}
+  button.verde{background:var(--verde);color:#fff;}
+  .fundo{position:fixed;inset:0;background:#0007;z-index:20;display:none;align-items:flex-end;justify-content:center;} .fundo.on{display:flex;}
+  .folha{background:#fff;width:100%;max-width:640px;border-radius:18px 18px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom));max-height:88vh;overflow:auto;}
+  .folha h3{font-size:18px;margin-bottom:8px;color:var(--azul);} .linha{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid #eee;font-size:14.5px;} .linha small{display:block;color:var(--suave);font-size:12px;}
+  .folha label{display:block;font-size:13px;font-weight:700;margin:12px 0 4px;} .folha input,.folha textarea{width:100%;padding:11px 12px;border:1.5px solid var(--borda);border-radius:10px;font-size:16px;color:var(--texto);}
+  .acoes{display:flex;gap:8px;margin-top:14px;} .acoes button{flex:1;}
+  .aviso-topo{background:#FFF3E0;color:#6B3E0C;font-size:12.5px;padding:8px 14px;text-align:center;}
+</style>
+</head>
+<body>
+<header><h1 id="hLoja">🍬 Bomboniere</h1><p id="hSub">Balas, chocolates, salgadinhos e muito mais</p></header>
+<div id="aviso" class="aviso-topo" style="display:none"></div>
+<div class="barra" id="barra" style="display:none"><input id="busca" type="search" placeholder="Buscar produto..." autocomplete="off" oninput="desenhar()"><div class="chips" id="chips"></div></div>
+<main id="lista"><div class="vazio">Carregando os produtos...</div></main>
+<div class="rodape" id="rodape"></div>
+
+<div class="carrinho" id="carrinho"><div class="lin"><div class="tot"><span id="cQtd"></span><b id="cTotal"></b></div><button class="grande" onclick="abrirLista()">Ver minha lista ›</button></div></div>
+
+<div class="fundo" id="fundo" onclick="if(event.target===this)fecharLista()"><div class="folha">
+  <h3>🛒 Minha lista</h3>
+  <div id="linhas"></div>
+  <div class="linha" style="border:none;font-weight:800;font-size:17px;"><span>Total estimado</span><span id="fTotal"></span></div>
+  <div class="sub">Os preços e a disponibilidade são confirmados pela loja. Combine retirada ou entrega pelo WhatsApp.</div>
+  <label for="nome">Seu nome</label><input id="nome" autocomplete="name" placeholder="Como podemos te chamar?">
+  <label for="obs">Observação (opcional)</label><textarea id="obs" rows="2" placeholder="Ex.: retiro hoje às 17h"></textarea>
+  <div class="acoes"><button class="grande" style="background:#eee;color:var(--texto)" onclick="fecharLista()">Voltar</button><button class="grande verde" id="btnEnviar" onclick="enviar()">Enviar no WhatsApp</button></div>
+  <div class="sub" id="msgEnvio" style="margin-top:8px;"></div>
+</div></div>
+
+<script>
+var Q = new URLSearchParams(location.search);
+var SCRIPT = Q.get('s') ? 'https://script.google.com/macros/s/' + Q.get('s').replace(/[^\w-]/g, '') + '/exec' : '';
+var D = null, cat = 'Todos', lista = {};   // lista: id -> quantidade (kg para itens por peso)
+var brl = function (v) { return (Number(v) || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); };
+var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
+var norm = function (s) { return String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase(); };
+var CHAVE = 'bomb_cat_v1:' + (Q.get('s') || '');
+
+function api(fn) {
+  return fetch(SCRIPT, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ loja: fn, args: [] }) })
+    .then(function (r) { return r.json(); }).then(function (r) { if (!r.ok) throw new Error(r.erro || 'erro'); return r.v; });
+}
+function iniciar() {
+  if (!SCRIPT) { document.getElementById('lista').innerHTML = '<div class="vazio">Este link está incompleto. Peça o link do catálogo para a loja.</div>'; return; }
+  api('lojaBomboniere').then(function (d) {
+    try { localStorage.setItem(CHAVE, JSON.stringify(d)); } catch (e) {}
+    usar(d);
+  }).catch(function () {
+    var c = null; try { c = JSON.parse(localStorage.getItem(CHAVE)); } catch (e) {}
+    if (c) { usar(c); mostrarAviso('Sem conexão agora: mostrando a última lista salva neste aparelho. Os preços podem ter mudado.'); }
+    else document.getElementById('lista').innerHTML = '<div class="vazio">Não consegui carregar agora. Confira a internet e tente de novo em alguns instantes.</div>';
+  });
+}
+function mostrarAviso(t) { var a = document.getElementById('aviso'); a.textContent = t; a.style.display = 'block'; }
+function usar(d) {
+  D = d; document.getElementById('hLoja').textContent = '🍬 ' + (d.loja || 'Bomboniere');
+  document.title = 'Bomboniere · ' + (d.loja || '');
+  if (!d.ativo) { document.getElementById('lista').innerHTML = '<div class="vazio"><b>Catálogo em breve</b><br>Estamos preparando a lista de produtos.' + (d.whatsLoja ? '<br><br><a href="https://wa.me/55' + d.whatsLoja.replace(/^55/, '') + '" style="color:var(--azul);font-weight:700">Fale com a loja no WhatsApp</a>' : '') + '</div>'; return; }
+  document.getElementById('barra').style.display = 'block';
+  desenharChips(); desenhar();
+  var r = '';
+  if (d.endereco) r += 'Retirada na loja: ' + esc(d.endereco) + '<br>';
+  r += 'Preços e disponibilidade podem mudar. Atualizado em ' + esc(d.atualizado || '') + '.';
+  r += '<br><a href="encomenda.html?s=' + encodeURIComponent(Q.get('s') || '') + '">🎂 Quer encomendar bolo ou doces para festa? Clique aqui</a>';
+  document.getElementById('rodape').innerHTML = r;
+}
+function categorias() { var c = []; D.itens.forEach(function (i) { if (c.indexOf(i.categoria) < 0) c.push(i.categoria); }); return c; }
+function desenharChips() {
+  var cs = ['Todos']; if ((D.combos || []).length) cs.push('Combos'); cs = cs.concat(categorias());
+  document.getElementById('chips').innerHTML = cs.map(function (c) { return '<button class="chip' + (c === cat ? ' on' : '') + '" onclick="escolher(this)" data-c="' + esc(c) + '">' + (c === 'Combos' ? '🎁 ' : '') + esc(c) + '</button>'; }).join('');
+}
+function escolher(el) { cat = el.getAttribute('data-c'); desenharChips(); desenhar(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+function qtdDe(i) { return lista[i.id] || 0; }
+function passo(i) { return i.kg ? 0.1 : 1; }
+function fmtQ(i, q) { return i.kg ? (q >= 1 ? String(Math.round(q * 100) / 100).replace('.', ',') + ' kg' : Math.round(q * 1000) + ' g') : String(q); }
+function totalItem(i, q) {
+  if (i.kg) return Math.round(i.preco * q * 100) / 100;
+  var t = i.preco * q; if (i.leve && q >= i.leve.qtd) t = Math.floor(q / i.leve.qtd) * i.leve.preco + (q % i.leve.qtd) * i.preco;
+  return Math.round(t * 100) / 100;
+}
+function cardItem(i) {
+  var q = qtdDe(i), tags = '';
+  if (i.de) tags += '<span class="tag">promoção</span>';
+  if (i.leve) tags += '<span class="tag verde">Leve ' + i.leve.qtd + ' por ' + brl(i.leve.preco) + '</span>';
+  if (i.pouco) tags += '<span class="tag aviso">últimas unidades</span>';
+  return '<div class="item"><div class="info"><div class="nome">' + esc(i.nome) + '</div><div class="preco">' + (i.de ? '<s>' + brl(i.de) + '</s>' : '') + brl(i.preco) + (i.kg ? ' <span class="sub">/ kg</span>' : '') + '</div>' + tags + '</div>' +
+    '<div class="qtd">' + (q ? '<button onclick="mudar(\'' + i.id + '\',-1)" aria-label="menos">−</button><b>' + fmtQ(i, q) + '</b>' : '') + '<button class="mais" onclick="mudar(\'' + i.id + '\',1)" aria-label="mais">+</button></div></div>';
+}
+function cardCombo(c) {
+  var q = lista['C' + c.id] || 0;
+  return '<div class="item"><div class="info"><div class="nome">🎁 ' + esc(c.nome) + '</div><div class="preco"><s>' + brl(c.normal) + '</s>' + brl(c.preco) + '</div><div class="sub">' + c.itens.map(function (x) { return (x.qtd > 1 ? x.qtd + '× ' : '') + esc(x.nome); }).join(' + ') + '</div><span class="tag verde">economize ' + brl(c.normal - c.preco) + '</span></div>' +
+    '<div class="qtd">' + (q ? '<button onclick="mudar(\'C' + c.id + '\',-1)" aria-label="menos">−</button><b>' + q + '</b>' : '') + '<button class="mais" onclick="mudar(\'C' + c.id + '\',1)" aria-label="mais">+</button></div></div>';
+}
+function desenhar() {
+  if (!D || !D.ativo) return;
+  var q = norm(document.getElementById('busca').value), h = '';
+  var combos = (D.combos || []).filter(function (c) { return !q || norm(c.nome + ' ' + c.itens.map(function (x) { return x.nome; }).join(' ')).indexOf(q) >= 0; });
+  var itens = D.itens.filter(function (i) { return !q || norm(i.nome + ' ' + i.categoria).indexOf(q) >= 0; });
+  if (cat === 'Combos') itens = []; else if (cat !== 'Todos') { itens = itens.filter(function (i) { return i.categoria === cat; }); combos = []; }
+  if (combos.length) h += '<h2>Combos</h2>' + combos.map(cardCombo).join('');
+  var atual = null;
+  itens.forEach(function (i) { if (cat === 'Todos' && i.categoria !== atual) { atual = i.categoria; h += '<h2>' + esc(atual) + '</h2>'; } h += cardItem(i); });
+  if (!h) h = '<div class="vazio">Nenhum produto encontrado.</div>';
+  document.getElementById('lista').innerHTML = h; barraCarrinho();
+}
+function acharItem(id) { return id.charAt(0) === 'C' && D.combos.some(function (c) { return 'C' + c.id === id; }) ? null : D.itens.filter(function (i) { return i.id === id; })[0]; }
+function mudar(id, d) {
+  var i = acharItem(id), p = i ? passo(i) : 1, q = Math.round(((lista[id] || 0) + d * p) * 100) / 100;
+  if (q <= 0) delete lista[id]; else lista[id] = q;
+  desenhar();
+}
+function linhasLista() {
+  var L = [];
+  Object.keys(lista).forEach(function (id) {
+    var q = lista[id], i = acharItem(id);
+    if (i) L.push({ nome: i.nome, qtd: fmtQ(i, q), total: totalItem(i, q), nota: (i.leve && q >= i.leve.qtd && !i.kg) ? 'leve ' + i.leve.qtd + ' por ' + brl(i.leve.preco) : '' });
+    else { var c = D.combos.filter(function (x) { return 'C' + x.id === id; })[0]; if (c) L.push({ nome: 'Combo ' + c.nome, qtd: String(q), total: Math.round(c.preco * q * 100) / 100, nota: c.itens.map(function (x) { return (x.qtd > 1 ? x.qtd + '× ' : '') + x.nome; }).join(' + ') }); }
+  });
+  return L;
+}
+function totalGeral() { return linhasLista().reduce(function (s, l) { return s + l.total; }, 0); }
+function barraCarrinho() {
+  var n = Object.keys(lista).length, el = document.getElementById('carrinho');
+  el.className = 'carrinho' + (n ? ' on' : '');
+  document.getElementById('cQtd').textContent = n + (n === 1 ? ' produto' : ' produtos') + ' na lista';
+  document.getElementById('cTotal').textContent = brl(totalGeral());
+}
+function abrirLista() {
+  var L = linhasLista();
+  document.getElementById('linhas').innerHTML = L.map(function (l) { return '<div class="linha"><span>' + esc(l.qtd) + ' × ' + esc(l.nome) + (l.nota ? '<small>' + esc(l.nota) + '</small>' : '') + '</span><b>' + brl(l.total) + '</b></div>'; }).join('');
+  document.getElementById('fTotal').textContent = brl(totalGeral());
+  document.getElementById('btnEnviar').textContent = D.whatsLoja ? 'Enviar no WhatsApp' : 'Copiar minha lista';
+  try { document.getElementById('nome').value = localStorage.getItem('bomb_nome') || ''; } catch (e) {}
+  document.getElementById('msgEnvio').textContent = '';
+  document.getElementById('fundo').className = 'fundo on';
+}
+function fecharLista() { document.getElementById('fundo').className = 'fundo'; }
+function textoPedido() {
+  var nome = document.getElementById('nome').value.trim(), obs = document.getElementById('obs').value.trim(), L = linhasLista();
+  var t = 'Olá! Gostaria de pedir na bomboniere' + (nome ? ' (' + nome + ')' : '') + ':\n\n';
+  L.forEach(function (l) { t += '• ' + l.qtd + ' × ' + l.nome + ' — ' + brl(l.total) + '\n'; });
+  t += '\nTotal estimado: ' + brl(totalGeral()) + '\n(Preços e disponibilidade a confirmar.)';
+  if (obs) t += '\n\nObs.: ' + obs;
+  return t;
+}
+function enviar() {
+  if (!Object.keys(lista).length) return;
+  try { localStorage.setItem('bomb_nome', document.getElementById('nome').value.trim()); } catch (e) {}
+  var t = textoPedido();
+  if (D.whatsLoja) { var n = D.whatsLoja.replace(/^55/, ''); window.open('https://wa.me/55' + n + '?text=' + encodeURIComponent(t), '_blank'); document.getElementById('msgEnvio').textContent = 'Abrindo o WhatsApp... É só tocar em enviar a mensagem.'; return; }
+  (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(function () { document.getElementById('msgEnvio').textContent = 'Lista copiada. Cole no WhatsApp da loja.'; }, function () { document.getElementById('msgEnvio').textContent = t; });
+}
+iniciar();
+</script>
+</body>
+</html>

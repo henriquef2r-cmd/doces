@@ -112,6 +112,7 @@
 <header>
   <h1 id="hLoja">🎂 Encomendas</h1>
   <p id="hSub">Escolha, marque a data e garanta seu pedido com o sinal.</p>
+  <p id="hBomb" style="display:none;margin-top:8px"><a id="hBombA" style="color:#fff;font-weight:700;text-decoration:underline" href="#">🍬 Ver a bomboniere: balas, chocolates e salgadinhos</a></p>
 </header>
 
 <main>
@@ -2529,6 +2530,7 @@ function iniciar() {
   api('lojaCatalogo').then(function (c) {
     C = c;
     $('hLoja').textContent = '🎂 ' + c.loja;
+    if (c.bomboniere) { $('hBombA').href = 'bomboniere.html?s=' + encodeURIComponent(Q.get('s') || ''); $('hBomb').style.display = 'block'; }
     document.title = 'Encomendas · ' + c.loja;
     $('hSub').textContent = 'Escolha, marque a data e garanta seu pedido com ' + c.sinalPct + '% de sinal.';
     $('carregando').classList.add('oculto');
