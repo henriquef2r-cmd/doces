@@ -542,6 +542,7 @@
         <div class="campo"><label>Meta de venda por dia (R$)</label><input id="rgMeta" type="number" step="1" inputmode="decimal" placeholder="opcional"></div>
       </div>
       <div class="campo" style="display:flex;gap:8px;align-items:center;"><input id="rgSemEstoque" type="checkbox" style="width:auto;"><label for="rgSemEstoque" style="margin:0;font-size:12.5px;cursor:pointer;">Deixar vender mesmo com estoque zerado no sistema (útil no começo, antes de contar tudo)</label></div>
+      <div class="campo" style="display:flex;gap:8px;align-items:center;"><input id="rgTelaTroco" type="checkbox" style="width:auto;" onchange="db.config.telaTroco=this.checked;salvarDB();"><label for="rgTelaTroco" style="margin:0;font-size:12.5px;cursor:pointer;">Mostrar o <b>troco em tela grande</b> depois de concluir uma venda em dinheiro (vale só para este aparelho)</label></div>
       <button class="acao" onclick="salvarRegras()">Salvar</button> <button class="acao secundario" onclick="atualizarProdutosAgora('msgRegras')">🔄 Atualizar produtos da planilha</button>
       <div id="msgRegras" class="msg" style="margin-top:10px;"></div>
     </div>
@@ -758,6 +759,14 @@
   <div id="encMsg" class="msg"></div>
   <div id="encLista" style="max-height:55vh;overflow:auto;"></div>
   <div class="botoes"><button class="acao" onclick="fecharModal('modalEncomendas')">Fechar</button></div>
+</div></div>
+
+<div class="fundo-modal" id="modalTroco" style="z-index:100;"><div class="modal" style="max-width:380px;text-align:center;">
+  <div style="font-size:15px;font-weight:800;color:#666;letter-spacing:.08em;">TROCO A DEVOLVER</div>
+  <div id="trocoValor" style="font-size:64px;font-weight:900;color:var(--verde);line-height:1.1;margin:6px 0;"></div>
+  <div id="trocoNotas" style="font-size:15px;font-weight:600;"></div>
+  <div id="trocoInfo" class="ajuda" style="margin-top:8px;"></div>
+  <div class="botoes" style="justify-content:center;"><button id="trocoOk" class="acao verde" style="min-width:180px;font-size:18px;padding:14px;" onclick="fecharModal('modalTroco')">OK, troco entregue</button></div>
 </div></div>
 
 <div class="fundo-modal" id="modalPix"><div class="modal">
@@ -3599,10 +3608,29 @@ function iniciarFinalizacao(partes, cliente) {
   } else if (partes.some(x => x.forma === 'Dinheiro')) abrirDinheiro();
   else concluirVenda();
 }
+// como entregar o troco: menos notas e moedas possível (R$ 17,50 = 1 de 10 + 1 de 5 + 2 de 1 + 1 de 0,50)
+function trocoEmNotas(valor) {
+  let c = Math.round(valor * 100); const out = [];
+  [10000, 5000, 2000, 1000, 500, 200, 100, 50, 25, 10, 5].forEach(d => { const n = Math.floor(c / d); if (n > 0) { out.push({ n, d }); c -= n * d; } });
+  return out;
+}
+function textoNotas(valor) { return trocoEmNotas(valor).map(x => `${x.n} × ${x.d >= 200 ? 'nota' : 'moeda'} de ${brl(x.d / 100)}`).join('  ·  '); }
 function calcTroco() {
-  const r = parseFloat($('dinRecebido').value), t = valorDinheiro();
-  $('dinTroco').textContent = isNaN(r) ? '' : (r >= t ? 'Troco: ' + brl(r - t) : 'Faltam ' + brl(t - r));
-  $('dinTroco').style.color = !isNaN(r) && r < t ? 'var(--vermelho)' : 'var(--verde)';
+  const r = parseFloat($('dinRecebido').value), t = valorDinheiro(), el = $('dinTroco');
+  if (isNaN(r)) { el.innerHTML = ''; return; }
+  if (r < t - 0.001) { el.innerHTML = `<span style="color:var(--vermelho);font-size:20px;">Faltam ${brl(t - r)}</span>`; return; }
+  const troco = r2(r - t);
+  el.innerHTML = troco > 0
+    ? `<div style="font-size:13px;color:#666;font-weight:600;">TROCO A DAR</div><div style="font-size:40px;font-weight:900;color:var(--verde);line-height:1.1;">${brl(troco)}</div><div class="ajuda" style="font-size:12px;margin-top:2px;">${textoNotas(troco)}</div>`
+    : `<span style="color:var(--verde);font-size:20px;">Valor exato: sem troco</span>`;
+}
+// depois de concluir: o troco continua na tela até você tocar em OK (o cliente ainda está esperando)
+function mostrarTroco(troco, recebido, total) {
+  $('trocoValor').textContent = brl(troco);
+  $('trocoInfo').textContent = `Recebido ${brl(recebido)} · Total ${brl(total)}`;
+  $('trocoNotas').textContent = textoNotas(troco);
+  abrirModal('modalTroco');
+  setTimeout(() => { const b = $('trocoOk'); if (b) b.focus(); }, 60);
 }
 function cancelarPix() { pagamentoEmAndamento = null; fecharModal('modalPix'); atualizarVisor(); }
 function confirmarPix() { fecharModal('modalPix'); if (pagamentoEmAndamento && pagamentoEmAndamento.partes.some(x => x.forma === 'Dinheiro')) abrirDinheiro(); else concluirVenda(); }
@@ -3612,11 +3640,11 @@ function concluirVenda() {
   const total = totalCarrinho();
   const pa = pagamentoEmAndamento || { forma: $('formaPagamento').value };
   const partes = pa.partes || [{ forma: pa.forma, valor: total }], forma = pa.forma;
-  let troco = 0;
+  let troco = 0, recebidoDin = 0;
   if (partes.some(x => x.forma === 'Dinheiro')) {
     const r = parseFloat($('dinRecebido').value), vd = valorDinheiro();
     if (!isNaN(r) && r < vd) { alert('Valor recebido menor que o total.'); return; }
-    if (!isNaN(r)) troco = r2(r - vd);
+    if (!isNaN(r)) { troco = r2(r - vd); recebidoDin = r; }
     fecharModal('modalDinheiro');
   }
   const custoTotal = Math.round(carrinho.reduce((s, i) => s + i.custo * i.qtd, 0) * 100) / 100;
@@ -3631,7 +3659,7 @@ function concluirVenda() {
   if (db.config.operador && operadores().length) venda.operador = db.config.operador;
   if (premioUsado) venda.premio = premioUsado;
   if (taxa) venda.taxa = taxa;
-  if (troco) venda.troco = troco;
+  if (troco) { venda.troco = troco; venda.recebido = recebidoDin; }
   if (partes.length > 1) venda.pagamentos = partes;
   if (cli) venda.cliente = { id: cli.id, nome: cli.nome };
   venda.itens.forEach(i => {
@@ -3653,6 +3681,7 @@ function concluirVenda() {
   if (ehCelular()) vendaConcluidaCelular(venda); else if (!(db.config.impressora && db.config.impAuto)) imprimirRecibo(venda);
   carrinho = []; pagamentoEmAndamento = null; descontoVenda = 0; clienteVenda = null; premioUsado = 0;
   renderCarrinho();
+  if (troco > 0 && db.config.telaTroco !== false) mostrarTroco(troco, recebidoDin, venda.total);
   mostrarObrigado();
   renderEstadoCaixa();
   sincronizar(false);
@@ -5099,7 +5128,7 @@ async function aplicarSugestao(i) {
 // ── taxas, meta e regras ──
 function carregarRegrasNaTela() {
   const t = db.extras.taxas || {}, r = regras();
-  $('txDebito').value = t.debito || ''; $('txCredito').value = t.credito || ''; $('txPix').value = t.pix || ''; $('rgMeta').value = r.metaDiaria || ''; $('rgSemEstoque').checked = !!r.venderSemEstoque;
+  $('txDebito').value = t.debito || ''; $('txCredito').value = t.credito || ''; $('txPix').value = t.pix || ''; $('rgMeta').value = r.metaDiaria || ''; $('rgSemEstoque').checked = !!r.venderSemEstoque; $('rgTelaTroco').checked = db.config.telaTroco !== false;
   $('avisoServidor').style.display = db.config.servidorAntigo ? 'block' : 'none';
   listarCopias();
 }
