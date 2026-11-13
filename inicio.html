@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Rick e Tati</title>
+<meta name="theme-color" content="#6B4226">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icone.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icone-192.png">
+<style>
+  :root{--marrom:#6B4226;--fundo:#F8F4F0;--cartao:#fff;--texto:#2b1c10;--suave:#7a6a5c;--verde:#2e7d32;}
+  @media (prefers-color-scheme: dark){:root{--fundo:#1d1610;--cartao:#2a2018;--texto:#f3e9e1;--suave:#b9a999;}}
+  *{box-sizing:border-box;margin:0;}
+  body{font-family:-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--fundo);color:var(--texto);min-height:100vh;padding:0 16px calc(24px + env(safe-area-inset-bottom));}
+  header{background:var(--marrom);color:#fff;margin:0 -16px 20px;padding:calc(18px + env(safe-area-inset-top)) 16px 18px;}
+  header h1{font-size:20px;} header p{font-size:13px;opacity:.85;margin-top:2px;}
+  main{max-width:520px;margin:0 auto;}
+  a.grande{display:flex;align-items:center;gap:16px;background:var(--cartao);border-radius:16px;padding:20px;margin-bottom:14px;text-decoration:none;color:inherit;box-shadow:0 2px 10px #0002;border:2px solid transparent;}
+  a.grande:active{border-color:var(--marrom);}
+  .ico{font-size:44px;line-height:1;}
+  a.grande b{display:block;font-size:20px;} a.grande span{font-size:13.5px;color:var(--suave);display:block;margin-top:3px;}
+  h2{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--suave);margin:22px 0 8px;}
+  .linha{display:flex;gap:10px;flex-wrap:wrap;}
+  button,a.peq{font:inherit;font-size:14px;font-weight:600;padding:11px 14px;border-radius:10px;border:0;background:var(--marrom);color:#fff;text-decoration:none;cursor:pointer;}
+  button.sec,a.sec{background:var(--cartao);color:var(--texto);box-shadow:0 1px 4px #0002;}
+  .msg{font-size:13px;color:var(--verde);margin-top:8px;min-height:18px;}
+  .aviso{font-size:13px;color:var(--suave);background:var(--cartao);border-radius:10px;padding:10px 12px;margin-top:10px;}
+</style>
+</head>
+<body>
+<header><h1 id="loja">🍬 Rick e Tati</h1><p>Doces, guloseimas e confeitaria</p></header>
+<main>
+  <a class="grande" href="pdv.html"><div class="ico">🍬</div><div><b>Bomboniere</b><span>Caixa, produtos, estoque, notas de compra, fiado</span></div></a>
+  <a class="grande" href="index.html"><div class="ico">🎂</div><div><b>Encomendas e gestão</b><span>Bolos, produção, compras, despesas, cardápio, fichas técnicas</span></div></a>
+
+  <h2>Link para os clientes</h2>
+  <div class="linha"><button class="sec" onclick="copiar()">📋 Copiar link das encomendas</button><a class="peq sec" href="encomenda.html">Ver a página</a></div>
+  <div class="msg" id="msg"></div>
+
+  <h2>Neste aparelho</h2>
+  <div class="linha"><button id="btnInstalar" style="display:none" onclick="instalar()">⬇️ Instalar como aplicativo</button></div>
+  <div class="aviso" id="ajudaInstalar">Para ter o ícone na tela inicial: no Android abra o menu ⋮ do Chrome e toque em <b>Instalar aplicativo</b>; no iPhone toque em <b>Compartilhar</b> e depois em <b>Adicionar à Tela de Início</b>. O aplicativo abre aqui, e daqui você escolhe a Bomboniere ou as Encomendas.</div>
+  <div class="aviso" id="estado"></div>
+</main>
+<script>
+  try{var d=JSON.parse(localStorage.getItem('bomboniere_pdv_v1'));if(d&&d.config&&d.config.nome)document.getElementById('loja').textContent='🍬 '+d.config.nome;
+    var e=[];e.push(d&&d.config&&d.config.url?'Bomboniere: conectada à planilha':'Bomboniere: ainda não conectada (Config)');
+    document.getElementById('estado').textContent=e.join(' · ');}catch(x){document.getElementById('estado').textContent='';}
+  function copiar(){var l=new URL('encomenda.html',location.href).href;var m=document.getElementById('msg');
+    (navigator.clipboard?navigator.clipboard.writeText(l):Promise.reject()).then(function(){m.textContent='Link copiado: '+l;},function(){m.textContent=l;});}
+  var ev;addEventListener('beforeinstallprompt',function(e){e.preventDefault();ev=e;document.getElementById('btnInstalar').style.display='';});
+  function instalar(){if(!ev)return;ev.prompt();ev=null;document.getElementById('btnInstalar').style.display='none';}
+  if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js').catch(function(){});
+</script>
+</body>
+</html>
