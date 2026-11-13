@@ -44,6 +44,9 @@
   <div class="linha"><button id="btnInstalar" style="display:none" onclick="instalar()">⬇️ Instalar como aplicativo</button></div>
   <div class="aviso" id="ajudaInstalar">Para ter o ícone na tela inicial: no Android abra o menu ⋮ do Chrome e toque em <b>Instalar aplicativo</b>; no iPhone toque em <b>Compartilhar</b> e depois em <b>Adicionar à Tela de Início</b>. O aplicativo abre aqui, e daqui você escolhe a Bomboniere ou as Encomendas.</div>
   <div class="aviso" id="estado"></div>
+  <h2>Versão</h2>
+  <div class="linha"><button class="sec" onclick="atualizarApp()">🔄 Atualizar o aplicativo</button></div>
+  <div class="aviso">Versão <b id="versao"></b> · Se você fez uma atualização e ela não apareceu, toque no botão acima: ele apaga a cópia guardada neste aparelho e baixa a versão nova. Seus produtos, vendas e senhas <b>não são apagados</b>.</div>
 </main>
 <script>
   try{var d=JSON.parse(localStorage.getItem('bomboniere_pdv_v1'));if(d&&d.config&&d.config.nome)document.getElementById('loja').textContent='🍬 '+d.config.nome;
@@ -51,6 +54,10 @@
     document.getElementById('estado').textContent=e.join(' · ');}catch(x){document.getElementById('estado').textContent='';}
   function copiar(){var l=new URL('encomenda.html',location.href).href;var m=document.getElementById('msg');
     (navigator.clipboard?navigator.clipboard.writeText(l):Promise.reject()).then(function(){m.textContent='Link copiado: '+l;},function(){m.textContent=l;});}
+  var VERSAO='13/11/2026 · v18';document.getElementById('versao').textContent=VERSAO;
+  async function atualizarApp(){try{if('serviceWorker' in navigator){var rs=await navigator.serviceWorker.getRegistrations();for(var i=0;i<rs.length;i++)await rs[i].unregister();}
+    if(window.caches){var ks=await caches.keys();for(var j=0;j<ks.length;j++)await caches.delete(ks[j]);}}catch(e){}
+    location.replace(location.pathname+'?v='+Date.now());}
   var ev;addEventListener('beforeinstallprompt',function(e){e.preventDefault();ev=e;document.getElementById('btnInstalar').style.display='';});
   function instalar(){if(!ev)return;ev.prompt();ev=null;document.getElementById('btnInstalar').style.display='none';}
   if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js').catch(function(){});
