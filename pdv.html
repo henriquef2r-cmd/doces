@@ -414,6 +414,13 @@
       <table style="margin-top:8px;"><tbody id="listaHorarios"></tbody></table>
     </details>
 
+    <details class="card dobra" id="cardVenc">
+      <summary><h2>📅 Vencimentos por lote</h2></summary>
+      <p class="ajuda" style="margin:8px 0;">Ao dar entrada informando a <b>validade</b>, o sistema guarda cada lote. As vendas e perdas tiram primeiro do lote que vence antes. Aqui aparecem os lotes que vencem nos próximos 90 dias.</p>
+      <table><thead><tr><th>Produto</th><th>Unidades</th><th>Validade</th><th>Faltam</th></tr></thead><tbody id="listaVencimentos"></tbody></table>
+      <div id="vencVazio" class="vazio">Nenhum lote vencendo nos próximos 90 dias.</div>
+    </details>
+
     <details class="card dobra">
       <summary><h2>🏷️ Etiquetas de preço e cartazes</h2></summary>
       <p class="ajuda" style="margin:8px 0;">Etiquetas pequenas para a prateleira (várias por folha) ou cartaz grande de oferta (uma folha por produto). Usa a impressora comum do computador ou do celular.</p>
@@ -461,6 +468,11 @@
       <p class="ajuda" style="margin:8px 0;">Calculadas com as vendas, o estoque, a validade e a margem deste PDV. Nada muda sem você tocar em aplicar.</p>
       <table><tbody id="listaSugestoes"></tbody></table>
       <div id="sugVazio" class="vazio">Nenhuma sugestão agora. Elas aparecem conforme as vendas e as validades entram no sistema.</div>
+    </details>
+    <details class="card dobra" id="cardMei">
+      <summary><h2>🧾 Faturamento do ano (MEI)</h2></summary>
+      <p class="ajuda" style="margin:8px 0;">Soma o balcão e as encomendas e compara com o limite anual do MEI. É um controle de apoio: confirme os valores, a classificação das receitas e os prazos (como o DAS, que costuma vencer todo dia 20) com o seu contador ou no Portal do Empreendedor.</p>
+      <div id="meiCorpo"><button class="acao" onclick="carregarMei()">Calcular agora</button></div>
     </details>
     <details class="card dobra" open>
       <summary><h2>📅 Próximas datas que vendem</h2></summary>
@@ -532,6 +544,14 @@
       <div class="campo" style="display:flex;gap:8px;align-items:center;"><input id="rgSemEstoque" type="checkbox" style="width:auto;"><label for="rgSemEstoque" style="margin:0;font-size:12.5px;cursor:pointer;">Deixar vender mesmo com estoque zerado no sistema (útil no começo, antes de contar tudo)</label></div>
       <button class="acao" onclick="salvarRegras()">Salvar</button> <button class="acao secundario" onclick="atualizarProdutosAgora('msgRegras')">🔄 Atualizar produtos da planilha</button>
       <div id="msgRegras" class="msg" style="margin-top:10px;"></div>
+    </div>
+
+    <div class="card">
+      <h2>🧾 Dados do MEI</h2>
+      <div class="grid2"><div class="campo"><label>Limite anual de faturamento (R$)</label><input id="meiLimite" type="number" step="100" inputmode="decimal"></div>
+      <div class="campo"><label>Mês em que abriu o MEI (só se foi neste ano)</label><input id="meiAbertura" type="month"></div></div>
+      <p class="ajuda">No ano da abertura o limite é proporcional aos meses de atividade. Confirme o valor do limite atual com o seu contador.</p>
+      <button class="acao" onclick="salvarMeiCfg()">Salvar</button><div id="msgMei" class="msg" style="margin-top:8px;"></div>
     </div>
 
     <div class="card">
@@ -3173,8 +3193,8 @@ function irPara(nome) {
   document.querySelectorAll('nav button').forEach(b => b.classList.toggle('ativo', b.dataset.painel === nome));
   document.querySelectorAll('.painel').forEach(p => p.classList.toggle('ativo', p.id === 'painel-' + nome));
   if (nome === 'produtos') renderProdutos();
-  if (nome === 'relatorios') { setDatasPadrao(); renderRelatorio(); }
-  if (nome === 'config') { carregarConfigNaTela(); atualizarInfoFila(); carregarRegrasNaTela(); carregarImpressoraNaTela(); }
+  if (nome === 'relatorios') { setDatasPadrao(); renderRelatorio(); if (meiDados) renderMei(); }
+  if (nome === 'config') { carregarConfigNaTela(); atualizarInfoFila(); carregarRegrasNaTela(); carregarImpressoraNaTela(); carregarMeiCfgNaTela(); }
   if (nome === 'caixa') renderEstadoCaixa();
   document.body.classList.toggle('caixa-ativo', nome === 'caixa');
   window.scrollTo(0, 0);
@@ -3219,11 +3239,13 @@ async function buscarEntradas(forcar) {
     if (db.entradasAplicadas.includes(en.id)) { enfileirar('entrada', { id: en.id }); return; }   // já somada: só confirma de novo
     const p = db.produtos.find(x => x.id === en.idProduto);
     if (!p) return;   // produto ainda não está neste PDV (ex.: computador novo antes de restaurar): a entrada continua esperando
+    const estAntes = p.estoque;
     p.estoque += Number(en.unidades) || 0;
     if (Number(en.custo) > 0) p.custo = Number(en.custo);
-    if (en.validade) p.validade = en.validade;
+    if (en.validade || p.lotesEstoque != null) addLoteLocal(p, Number(en.unidades) || 0, en.validade, estAntes);
     p.atualizado = new Date().toISOString();
-    enfileirar('produto', p);
+    enfileirar('produto', Object.assign({}, p, { semEstoque: true }));
+    movEstoque(p, Number(en.unidades) || 0, 'Entrada pelo aplicativo', en.validade || '', 'EN' + en.id);
     enfileirar('entrada', { id: en.id });
     db.entradasAplicadas.push(en.id);
     aplicou++;
@@ -3236,7 +3258,7 @@ async function buscarEntradas(forcar) {
     const m = aj.mudancas || {};
     ['nome', 'preco', 'custo', 'estoque', 'minimo', 'validade', 'fornecedor', 'categoria'].forEach(c => { if (c in m) p[c] = m[c]; });
     p.atualizado = new Date().toISOString();
-    enfileirar('produto', p);
+    enfileirar('produto', Object.assign({}, p, { semEstoque: true }));   // a planilha já tem o valor novo; o aparelho não regrava o estoque
     enfileirar('ajuste', { id: aj.id });
     db.ajustesAplicados.push(aj.id);
     aplicou++;
@@ -3770,10 +3792,12 @@ function salvarProduto() {
   if (db.produtos.find(p => p.codigo === codigo && p.id !== editId && !p.inativo)) { mostrarMsg('msgProduto', 'Já existe um produto ativo com esse código.', false); return; }
   let p;
   const extras = { atalho, promoPreco, promoAte: promoPreco ? promoAte : '', leveQtd: porPeso ? '' : leveQtd, levePreco: porPeso ? '' : levePreco, porPeso };
-  if (editId) { p = db.produtos.find(x => x.id === editId); Object.assign(p, { codigo, nome, preco, custo, estoque, minimo, categoria, validade, fornecedor, codigoCaixa, unidadesCaixa }, extras); }
+  let difEstoque = 0;
+  if (editId) { p = db.produtos.find(x => x.id === editId); difEstoque = r3(estoque - (Number(p.estoque) || 0)); Object.assign(p, { codigo, nome, preco, custo, estoque, minimo, categoria, validade, fornecedor, codigoCaixa, unidadesCaixa }, extras); }
   else { p = Object.assign({ id: novoId('P'), codigo, nome, preco, custo, estoque, minimo, categoria, validade, fornecedor, codigoCaixa, unidadesCaixa, inativo: false }, extras); db.produtos.push(p); }
   p.atualizado = new Date().toISOString();
-  enfileirar('produto', p);
+  if (editId) { enfileirar('produto', Object.assign({}, p, { semEstoque: true })); if (difEstoque) movEstoque(p, difEstoque, 'Ajuste manual no cadastro', ''); }
+  else enfileirar('produto', p);
   salvarDB();
   limparFormProduto(); renderProdutos();
   mostrarMsg('msgProduto', 'Produto salvo!', true);
@@ -3825,11 +3849,13 @@ function darEntrada() {
   const qtd = (parseInt($('eQtd').value, 10) || 0) * (a ? a.mult : 1);
   if (!p) { mostrarMsg('msgEntrada', 'Código não encontrado. Cadastre o produto primeiro.', false); return; }
   if (!qtd) { mostrarMsg('msgEntrada', 'Informe a quantidade.', false); return; }
+  const estAntes = p.estoque;
   p.estoque = Math.max(0, p.estoque + qtd);
   const c = parseFloat($('eCusto').value); if (c > 0) p.custo = c;
-  if ($('eValidade').value) p.validade = $('eValidade').value;
+  if ($('eValidade').value || p.lotesEstoque != null) addLoteLocal(p, qtd, $('eValidade').value, estAntes);
   p.atualizado = new Date().toISOString();
-  enfileirar('produto', p);
+  enfileirar('produto', Object.assign({}, p, { semEstoque: true }));
+  movEstoque(p, qtd, 'Entrada de mercadoria', $('eValidade').value || '');
   salvarDB();
   ['eCodigo', 'eQtd', 'eCusto', 'eValidade'].forEach(id => $(id).value = ''); rotuloEntrada();
   mostrarMsg('msgEntrada', `${p.nome}: +${qtd} un, estoque agora ${p.estoque}. Lance o valor da compra na planilha (Lançar despesa → Mercadoria p/ revenda).`, true);
@@ -3871,13 +3897,13 @@ function renderProdutos() {
   const lista = produtosAtivos().filter(p => p.nome.toLowerCase().includes(f) || p.codigo.includes(f) || (p.categoria || '').toLowerCase().includes(f))
     .sort((a, b) => a.nome.localeCompare(b.nome));
   $('tabelaProdutos').innerHTML = lista.map(p => {
-    const d = diasAte(p.validade);
+    const d = diasAte(validadeDe(p));
     let st = p.estoque <= p.minimo ? '<span class="badge baixo">Repor</span>' : '<span class="badge ok">OK</span>';
     if (d !== null && d <= 15 && p.estoque > 0) st += ` <span class="badge vence">${d < 0 ? 'Vencido' : 'Vence em ' + d + 'd'}</span>`;
     const m = p.preco > 0 ? Math.round((p.preco - (p.custo || 0)) / p.preco * 100) : 0;
     const extra = (p.atalho ? ' <span class="tag-promo" style="background:#EDE4F7;color:#5B2A6E;">⚡ botão</span>' : '') + (promoAtiva(p) ? ` <span class="tag-promo">promo ${brl(p.promoPreco)}</span>` : '') + (temLeve(p) ? ` <span class="tag-promo">${esc(textoLeve(p))}</span>` : '');
     const cod = /^SC\d{6}$/.test(p.codigo) ? `<span class="ajuda" title="Código provisório. Edite e passe o leitor no campo código, se o produto tiver código de barras.">${esc(p.codigo)} · provisório</span>` : esc(p.codigo);
-    return `<tr><td>${cod}</td><td>${esc(p.nome)}${extra}</td><td>${brl(p.preco)}</td><td${p.custo > 0 && m < MARGEM_MINIMA ? ' class="margem-baixa" title="Margem abaixo de ' + MARGEM_MINIMA + '%"' : ''}>${m}%${p.custo > 0 && m < MARGEM_MINIMA ? ' ⚠️' : ''}</td><td>${String(kg3(p.estoque)).replace('.', ',')}${p.porPeso ? ' kg' : ''}</td><td>${st}</td>
+    return `<tr><td>${cod}</td><td>${esc(p.nome)}${extra}${textoLotes(p) ? `<div class="ajuda" style="font-size:11px;">lotes: ${esc(textoLotes(p))}</div>` : ''}</td><td>${brl(p.preco)}</td><td${p.custo > 0 && m < MARGEM_MINIMA ? ' class="margem-baixa" title="Margem abaixo de ' + MARGEM_MINIMA + '%"' : ''}>${m}%${p.custo > 0 && m < MARGEM_MINIMA ? ' ⚠️' : ''}</td><td>${String(kg3(p.estoque)).replace('.', ',')}${p.porPeso ? ' kg' : ''}</td><td>${st}</td>
       <td><button class="acao secundario" style="padding:5px 10px;" onclick="editarProduto('${p.id}')">Editar</button>
       <button class="perigo" title="Tirar do catálogo" onclick="desativarProduto('${p.id}')">✕</button></td></tr>`;
   }).join('');
@@ -4478,7 +4504,7 @@ async function confirmarCompraFiscal(){if(!compraFiscalEmRevisao)return;cfLerEdi
  for(const it of itens){const mult=Number(it.multiplicador)||1,qtd=Number(it.qtd)*mult,freteItem=ratearFrete&&baseTotal>0?frete*((Number(it.total)||Number(it.qtd)*Number(it.custo)||0)/baseTotal):0,custo=((Number(it.custo)||0)+freteItem/(Number(it.qtd)||1))/mult;it._qtdEstoque=qtd;it._custoUnitarioPDV=custo;let p=db.produtos.find(x=>x.id===it._match);if(!p)p=cfEncontrar(it);
   if(p){it._produtoId=p.id;const estoqueAntigo=Number(p.estoque)||0;p.estoque=estoqueAntigo+qtd;if(custo>0){if(politica==='ultimo')p.custo=custo;else if(politica==='medio')p.custo=((estoqueAntigo*(Number(p.custo)||0))+(qtd*custo))/(estoqueAntigo+qtd||1);}if(aplicarPreco&&custo>0)p.preco=precoSugerido(custo);existentes++;}
   else{const cat='';p={id:novoId('P'),codigo:String(it.ean||codigoProvisorio()),nome:String(it.nome).trim(),preco:precoSugerido(custo),custo,estoque:qtd,minimo:Math.max(2,Math.ceil(qtd/3)),categoria:cat,validade:'',fornecedor:$('cfFornecedor').value.trim(),codigoCaixa:'',unidadesCaixa:(Number(it.multiplicador)>1?Number(it.multiplicador):''),inativo:false,atalho:false,promoPreco:'',promoAte:'',leveQtd:'',levePreco:'',ean:String(it.ean||''),atualizado:agora};db.produtos.push(p);it._produtoId=p.id;novos++;novosProdutos.push(p);}
-  p.atualizado=agora;enfileirar('produto',p);totalUn+=qtd;
+  p.atualizado=agora;if(it._produtoId&&!novosProdutos.includes(p)){enfileirar('produto',Object.assign({},p,{semEstoque:true}));movEstoque(p,qtd,'Nota fiscal '+(chave||'').slice(0,20),'');}else enfileirar('produto',p);totalUn+=qtd;
  }
  const compraId=chave;db.comprasImportadas.push(compraId);db.comprasImportadas=db.comprasImportadas.slice(-1000);db.historicoCompras=db.historicoCompras||[];const notaHistorico={id:compraId,fornecedor:$('cfFornecedor').value,cnpj:$('cfCnpj').value,numero:$('cfNumero').value,data:$('cfData').value,chave,arquivo:d.arquivo||'',total:cfNum($('cfTotal').value),frete:cfNum($('cfFrete').value),desconto:cfNum($('cfDesconto').value),pago:cfNum($('cfTotal').value),lancarDespesa:$('cfLancarDespesa').checked,itens:itens.map(i=>({nome:i.nome,ean:i.ean||'',codigoFornecedor:i.codigoFornecedor||i.codigo||'',codigo:i.ean||i.codigo||'',qtd:Number(i.qtd),unidade:i.unidade,multiplicador:Number(i.multiplicador)||1,unidadesEstoque:Number(i._qtdEstoque)||Number(i.qtd),custoDocumento:Number(i.custo),custoUnitarioPDV:Number(i._custoUnitarioPDV)||Number(i.custo),desconto:Number(i.desconto),produtoId:i._produtoId||i._match||''})),registrada:agora,status:'APLICADA_LOCAL'};db.historicoCompras.push(notaHistorico);db.historicoCompras=db.historicoCompras.slice(-1000);salvarDB();let statusCentral='reserva criada, mas registro final pendente';try{const rr=await cfApiFiscal('registrarNotaFiscal',notaHistorico);if(rr.ok&&rr.resultado&&rr.resultado.registrada){notaHistorico.status='REGISTRADA_CENTRAL';statusCentral='registrada no histórico da planilha'+(rr.resultado.despesaLancada?` e despesa de ${brl(rr.resultado.valorDespesa)} lançada no FINANCEIRO`:'');}else if(rr.ok&&rr.resultado&&rr.resultado.duplicada){notaHistorico.status='DUPLICIDADE_CENTRAL';statusCentral='já existente no histórico central';}}catch(e){}db.historicoCompras[db.historicoCompras.length-1]=notaHistorico;salvarDB();renderProdutos();renderAtalhos();fecharCompraFiscal();mostrarMsg('msgEntrada',`Entrada confirmada: ${novos} produto(s) novo(s), ${existentes} existente(s), ${totalUn} unidade(s). Estoque atualizado neste PDV; sincronização iniciada. Documento ${statusCentral}. Confira os preços sugeridos no catálogo.`,true);sincronizar(false);
 }
@@ -4731,11 +4757,11 @@ async function puxarCatalogo(forcar) {
       // mesmo produto cadastrado nos dois aparelhos (ex.: lista inicial): fica o da planilha
       const gemeo = db.produtos.find(x => !noServidor.has(x.id) && !vendidos.has(x.id) && !carrinho.some(i => i.id === x.id) && cfNorm(x.nome) === cfNorm(sp.nome));
       if (gemeo) { db.fila = db.fila.filter(e => !(e.tipo === 'produto' && e.dados && e.dados.id === gemeo.id)); db.produtos = db.produtos.filter(x => x !== gemeo); }
-      db.produtos.push(Object.assign({ inativo: false }, sp)); mudou++; return;
+      db.produtos.push(Object.assign({ inativo: false, lotes: [], lotesEstoque: (sp.lotes || []).length ? sp.estoque : null }, sp)); mudou++; return;
     }
     if (pend.has(sp.id)) return;   // este aparelho tem mudança ainda não enviada: ela vale
     const antes = JSON.stringify(lp);
-    Object.assign(lp, sp, { inativo: false });
+    Object.assign(lp, sp, { inativo: false, lotes: sp.lotes || [], lotesEstoque: (sp.lotes || []).length ? sp.estoque : null });
     if (JSON.stringify(lp) !== antes) mudou++;
   });
   (c.inativos || []).forEach(id => { const lp = db.produtos.find(x => x.id === id); if (lp && !lp.inativo && !pend.has(id)) { lp.inativo = true; mudou++; } });
@@ -4973,7 +4999,8 @@ async function aplicarInventario() {
   const agora = new Date().toISOString();
   mud.forEach(x => {
     if (x.c < x.p.estoque) { const perda = { id: novoId('PD'), data: agora, idProduto: x.p.id, produto: x.p.nome, qtd: x.p.estoque - x.c, custo: x.p.custo || 0, motivo: 'Diferença de inventário', semBaixa: true }; db.perdas.push(perda); enfileirar('perda', perda); }
-    x.p.estoque = x.c; x.p.atualizado = agora; enfileirar('produto', x.p);
+    const dif = r3(x.c - x.p.estoque);
+    x.p.estoque = x.c; x.p.atualizado = agora; enfileirar('produto', Object.assign({}, x.p, { semEstoque: true })); movEstoque(x.p, dif, 'Contagem de estoque', '');
   });
   db.inventario = { itens: {} }; salvarDB(); fecharModal('modalInventario'); renderProdutos(); sincronizar(false);
   mostrarToast(`✓ Contagem aplicada: ${mud.length} ajuste(s)`);
@@ -5019,7 +5046,7 @@ function renderPainelDia() {
   const formas = {}; vh.forEach(v => partesDe(v).forEach(x => { const k = /Cart/.test(x.forma) ? 'Cartão' : x.forma; formas[k] = (formas[k] || 0) + x.valor; }));
   const horas = {}; vh.forEach(v => { const h = new Date(v.data).getHours(); horas[h] = (horas[h] || 0) + v.total; });
   const pico = Object.keys(horas).sort((a, b) => horas[b] - horas[a])[0];
-  const repor = produtosAtivos().filter(p => p.estoque <= (Number(p.minimo) || 0)).length, vence = produtosAtivos().filter(p => { const d = diasAte(p.validade); return d !== null && d <= 15 && p.estoque > 0; }).length;
+  const repor = produtosAtivos().filter(p => p.estoque <= (Number(p.minimo) || 0)).length, vence = produtosAtivos().filter(p => { const d = diasAte(validadeDe(p)); return d !== null && d <= 15 && p.estoque > 0; }).length;
   const fiado = clientesFiado().reduce((s, c) => s + Math.max(c.saldo, 0), 0);
   $('tilesHoje').innerHTML = [['Vendas hoje', vh.length], ['Receita', brl(rec)], ['Lucro' + (tx ? ' (já sem taxas)' : ''), brl(luc)], ['Ticket médio', brl(vh.length ? rec / vh.length : 0)],
     ['Hora de pico', pico != null ? pico + 'h' : '—'], ['Fiado em aberto', brl(fiado)], ['Para repor', repor], ['Vencendo (15 dias)', vence]]
@@ -5039,10 +5066,10 @@ function calcularSugestoes() {
   const g30 = vendidoNoPeriodo(30), out = [], antigo = db.vendas.some(v => Date.now() - new Date(v.data).getTime() > 20 * 86400000);
   const top = Object.keys(g30).sort((a, b) => g30[b] - g30[a]).slice(0, 3).map(id => db.produtos.find(p => p.id === id)).filter(Boolean);
   produtosAtivos().forEach(p => {
-    const custo = Number(p.custo) || 0, m = pctMargem(p.preco, custo), d = diasAte(p.validade), g = g30[p.id] || 0;
+    const custo = Number(p.custo) || 0, m = pctMargem(p.preco, custo), d = diasAte(validadeDe(p)), g = g30[p.id] || 0;
     if (d !== null && d <= 30 && p.estoque > 0 && !promoFixa(p)) {
       const alvo = arred5(Math.max(custo * 1.05, p.preco * (d <= 7 ? 0.6 : d <= 15 ? 0.75 : 0.85)));
-      if (alvo < p.preco) out.push({ tipo: '⏳ Vencendo', p, texto: `${d < 0 ? 'Vencido' : 'Vence em ' + d + ' dia(s)'} com ${p.estoque} em estoque. Promoção a ${brl(alvo)} até a validade.`, acao: 'Aplicar promoção', mud: { promoPreco: alvo, promoAte: p.validade }, ordem: d });
+      if (alvo < p.preco) out.push({ tipo: '⏳ Vencendo', p, texto: `${lotesAtuais(p).length ? kg3(lotesAtuais(p)[0].qtd) + ' un ' : ''}${d < 0 ? 'vencidas' : 'vencem em ' + d + ' dia(s)'} (${p.estoque} em estoque no total). Promoção a ${brl(alvo)} até a validade${lotesAtuais(p).length > 1 ? ' (vale para o produto todo)' : ''}.`, acao: 'Aplicar promoção', mud: { promoPreco: alvo, promoAte: validadeDe(p) }, ordem: d });
     } else if (antigo && p.estoque > 0 && g === 0 && custo > 0 && !promoFixa(p) && Date.now() - new Date(p.atualizado || 0).getTime() > 20 * 86400000) {
       const alvo = arred5(Math.max(custo * 1.1, p.preco * 0.85)); const ate = new Date(Date.now() + 14 * 86400000).toISOString().slice(0, 10);
       if (alvo < p.preco) out.push({ tipo: '🐢 Parado', p, texto: `Nenhuma venda em 30 dias, ${p.estoque} parado(s) (${brl(p.estoque * custo)} em mercadoria). Promoção a ${brl(alvo)} por 14 dias.`, acao: 'Aplicar promoção', mud: { promoPreco: alvo, promoAte: ate }, ordem: 40 });
@@ -5105,7 +5132,7 @@ async function restaurarCopia(k) {
   if (!confirm(`Voltar os dados deste aparelho para como estavam em ${k.split('-').reverse().join('/')}? O que foi feito depois e ainda não foi para a planilha se perde.`)) return;
   const bd = await idbCopias(); bd.transaction('copias').objectStore('copias').get(k).onsuccess = e => { if (!e.target.result) return; localStorage.setItem(DB_KEY, e.target.result); db = carregarDB(); salvarDB(); carregarConfigNaTela(); renderEstadoCaixa(); mostrarMsg('msgBackup', 'Cópia restaurada.', true); };
 }
-function renderExtrasProdutos() { renderListaCompras(); renderCombosSugeridos(); renderPromos(); if ($('hrAlvos')) $('hrAlvos').innerHTML = [...new Set(db.produtos.map(p => p.categoria).filter(Boolean))].concat(produtosAtivos().map(p => p.nome)).map(c => `<option value="${esc(c)}">`).join(''); const dl = $('listaNomesProdutos'); if (dl && $('cbNomes')) $('cbNomes').innerHTML = dl.innerHTML; }
+function renderExtrasProdutos() { renderListaCompras(); renderVencimentos(); renderCombosSugeridos(); renderPromos(); if ($('hrAlvos')) $('hrAlvos').innerHTML = [...new Set(db.produtos.map(p => p.categoria).filter(Boolean))].concat(produtosAtivos().map(p => p.nome)).map(c => `<option value="${esc(c)}">`).join(''); const dl = $('listaNomesProdutos'); if (dl && $('cbNomes')) $('cbNomes').innerHTML = dl.innerHTML; }
 
 // ============================================================
 // FASE 4: venda por peso, operadores, fidelidade, etiquetas e cartazes, impressora de recibo,
@@ -5424,6 +5451,86 @@ async function aprovarComboSug(k) {
 }
 function ignorarComboSug(k) { const c = combosSug[k]; if (!c) return; ignorados().push(c.id); salvarDB(); renderCombosSugeridos(); }
 function restaurarCombosIgnorados() { db.config.combosIgnorados = []; salvarDB(); renderCombosSugeridos(); }
+// ── movimentos de estoque e lotes de validade ──
+const r3 = v => Math.round((Number(v) || 0) * 1000) / 1000;
+// Em vez de mandar o estoque inteiro (que apaga o que outro aparelho fez), manda só a diferença: a planilha soma.
+function movEstoque(p, delta, motivo, validade, id) {
+  delta = r3(delta); if (!delta && !validade) return;
+  enfileirar('estoque', { id: id || novoId('M'), idProduto: p.id, delta, motivo: motivo || '', validade: validade || '', data: new Date().toISOString() });
+}
+// Lotes: o que sobra de cada lote vem do estoque total (as vendas tiram do lote que vence primeiro)
+function addLoteLocal(p, qtd, validade, estoqueAntes) {   // entrada feita neste aparelho (com ou sem validade)
+  if (p.lotesEstoque == null) p.lotesEstoque = estoqueAntes != null ? estoqueAntes : (Number(p.estoque) || 0) - (Number(qtd) || 0);
+  p.lotesEstoque = r3(p.lotesEstoque + (Number(qtd) || 0));
+  if (qtd > 0 && validade) p.lotes = (p.lotes || []).concat([{ qtd, validade }]);
+}
+function lotesAtuais(p) {
+  const lotes = (p.lotes || []).map(l => ({ qtd: Number(l.qtd) || 0, validade: l.validade })).sort((a, b) => String(a.validade).localeCompare(String(b.validade)));
+  let tirar = p.lotesEstoque == null ? 0 : p.lotesEstoque - (Number(p.estoque) || 0);   // o que saiu do estoque desde que a lista de lotes foi dada
+  for (const l of lotes) { if (tirar <= 0) break; const t = Math.min(l.qtd, tirar); l.qtd = r3(l.qtd - t); tirar -= t; }
+  return lotes.filter(l => l.qtd > 0);
+}
+function validadeDe(p) { const l = lotesAtuais(p); return l.length ? l[0].validade : (p.validade || ''); }
+function textoLotes(p) { const l = lotesAtuais(p); return l.length > 1 || (l.length === 1 && Number(p.estoque) > l[0].qtd) ? l.map(x => `${String(kg3(x.qtd)).replace('.', ',')} un até ${x.validade.split('-').reverse().join('/')}`).join(' · ') : ''; }
+function renderVencimentos() {
+  if (!$('listaVencimentos')) return;
+  const L = [];
+  produtosAtivos().forEach(p => { const ls = lotesAtuais(p); if (ls.length) ls.forEach(l => L.push({ p, qtd: l.qtd, validade: l.validade, dias: diasAte(l.validade) })); else if (p.validade && p.estoque > 0) L.push({ p, qtd: p.estoque, validade: p.validade, dias: diasAte(p.validade), semLote: true }); });
+  L.sort((a, b) => a.dias - b.dias);
+  $('listaVencimentos').innerHTML = L.filter(x => x.dias <= 90).slice(0, 40).map(x => `<tr><td>${esc(x.p.nome)}</td><td>${String(kg3(x.qtd)).replace('.', ',')}${x.semLote ? '<span class="ajuda"> (todo o estoque)</span>' : ''}</td><td>${x.validade.split('-').reverse().join('/')}</td><td style="font-weight:700;color:${x.dias < 0 ? 'var(--vermelho)' : x.dias <= 15 ? '#c26a00' : 'inherit'}">${x.dias < 0 ? 'vencido há ' + (-x.dias) + 'd' : x.dias === 0 ? 'vence hoje' : x.dias + ' dias'}</td></tr>`).join('');
+  $('vencVazio').style.display = L.some(x => x.dias <= 90) ? 'none' : 'block';
+}
+
+// ── MEI: faturamento do ano contra o limite, relatório mensal ──
+const MESES = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+let meiDados = null;
+function meiCfg() { const m = db.extras.mei || {}; return { limite: Number(m.limite) || 81000, abertura: m.abertura || '' }; }
+function meiLimiteDoAno(ano) {   // no ano de abertura o limite é proporcional aos meses de atividade (limite ÷ 12 por mês, contando o mês de abertura)
+  const c = meiCfg(); if (c.abertura && c.abertura.slice(0, 4) === String(ano)) return r2(c.limite / 12 * (12 - Number(c.abertura.slice(5, 7)) + 1));
+  return c.limite;
+}
+async function carregarMei() {
+  if (!$('meiCorpo')) return;
+  if (!db.config.url) { $('meiCorpo').innerHTML = '<div class="ajuda">Conecte a planilha em Config para ver o faturamento do ano (ele soma o balcão e as encomendas).</div>'; return; }
+  $('meiCorpo').innerHTML = '<div class="ajuda">Calculando...</div>';
+  try {
+    const ano = new Date().getFullYear();
+    const r = await (await fetch(`${db.config.url}?acao=mei&ano=${ano}&token=${encodeURIComponent(db.config.token)}`)).json();
+    if (!r.ok) throw new Error(/desconhecida/i.test(r.erro || '') ? 'A planilha está com o Código.gs antigo.' : r.erro);
+    meiDados = r.mei; renderMei();
+  } catch (e) { $('meiCorpo').innerHTML = `<div class="msg erro">Não consegui calcular: ${esc(e.message || e)}</div>`; }
+}
+function renderMei() {
+  const d = meiDados; if (!d) return;
+  const lim = meiLimiteDoAno(d.ano), pc = lim > 0 ? d.total / lim * 100 : 0, mesAtual = new Date().getMonth() + 1;
+  const ab = meiCfg().abertura, primeiro = ab && ab.slice(0, 4) === String(d.ano) ? Number(ab.slice(5, 7)) : 1;
+  const decorridos = Math.max(mesAtual - primeiro + 1, 1), media = d.total / decorridos, projecao = r2(media * (12 - primeiro + 1));
+  const cor = pc >= 100 ? 'var(--vermelho)' : pc >= 80 ? '#c26a00' : 'var(--verde)';
+  $('meiCorpo').innerHTML = `
+    <div class="tiles" style="margin-bottom:8px;"><div class="tile"><div class="label">Faturado em ${d.ano}</div><div class="valor">${brl(d.total)}</div></div>
+      <div class="tile"><div class="label">Limite${lim !== meiCfg().limite ? ' (proporcional)' : ''}</div><div class="valor">${brl(lim)}</div></div>
+      <div class="tile"><div class="label">Ainda pode faturar</div><div class="valor">${brl(Math.max(lim - d.total, 0))}</div></div>
+      <div class="tile"><div class="label">Média por mês</div><div class="valor">${brl(media)}</div></div></div>
+    <div style="background:#eee;border-radius:8px;height:14px;overflow:hidden;"><div style="height:100%;background:${cor};width:${Math.min(100, pc)}%;"></div></div>
+    <div class="ajuda" style="margin:4px 0 8px;"><b style="color:${cor}">${pc.toFixed(1).replace('.', ',')}% do limite</b> · no ritmo atual o ano fecha em ${brl(projecao)}${projecao > lim ? ' <b style="color:var(--vermelho)">(acima do limite)</b>' : ''}</div>
+    ${pc >= 100 ? '<div class="msg erro" style="display:block;">Você passou do limite do MEI. Fale com o seu contador antes de continuar vendendo: passar do limite tem consequências nos impostos e no enquadramento.</div>' : pc >= 80 ? '<div class="msg" style="display:block;background:#FFF3CD;color:#5d3a00;">Atenção: você já usou mais de 80% do limite. Converse com o contador sobre o que fazer até o fim do ano.</div>' : ''}
+    <table><thead><tr><th>Mês</th><th>Bomboniere</th><th>Encomendas</th><th>Outras receitas</th><th>Total</th></tr></thead><tbody>${d.meses.map(m => `<tr${m.total ? '' : ' style="opacity:.45"'}><td>${MESES[m.mes - 1]}</td><td>${brl(m.balcao)}</td><td>${brl(m.encomendas)}</td><td>${brl(m.outras)}</td><td><b>${brl(m.total)}</b></td></tr>`).join('')}</tbody><tfoot><tr><th>Ano</th><th>${brl(d.meses.reduce((s, m) => s + m.balcao, 0))}</th><th>${brl(d.meses.reduce((s, m) => s + m.encomendas, 0))}</th><th>${brl(d.meses.reduce((s, m) => s + m.outras, 0))}</th><th>${brl(d.total)}</th></tr></tfoot></table>
+    <p class="ajuda">Soma: vendas do balcão (inclusive fiado, no mês da venda) + encomendas entregues + receitas lançadas à mão na planilha. Fiado ainda a receber: ${brl(d.fiadoAberto)}. Calculado em ${esc(d.geradoEm)}.</p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;"><button class="acao" onclick="imprimirMei()">🖨️ Imprimir relatório do ano</button><button class="acao secundario" onclick="carregarMei()">↻ Atualizar</button></div>`;
+}
+function imprimirMei() {
+  const d = meiDados; if (!d) return;
+  areaImpressao(`<div style="font-family:Arial,sans-serif;padding:12mm;color:#000;"><h2 style="margin:0 0 4px;">Relatório de receitas ${d.ano}</h2><div style="font-size:11pt;margin-bottom:10px;">${esc(db.config.nome || '')}</div>
+    <table style="border-collapse:collapse;width:100%;font-size:11pt;"><thead><tr>${['Mês', 'Bomboniere (comércio)', 'Encomendas', 'Outras receitas', 'Total'].map(h => `<th style="border:1px solid #000;padding:5px;text-align:left;">${h}</th>`).join('')}</tr></thead><tbody>${d.meses.map(m => `<tr><td style="border:1px solid #000;padding:5px;">${MESES[m.mes - 1]}</td><td style="border:1px solid #000;padding:5px;">${brl(m.balcao)}</td><td style="border:1px solid #000;padding:5px;">${brl(m.encomendas)}</td><td style="border:1px solid #000;padding:5px;">${brl(m.outras)}</td><td style="border:1px solid #000;padding:5px;"><b>${brl(m.total)}</b></td></tr>`).join('')}</tbody><tfoot><tr><td style="border:1px solid #000;padding:5px;"><b>Total</b></td><td style="border:1px solid #000;padding:5px;">${brl(d.meses.reduce((s, m) => s + m.balcao, 0))}</td><td style="border:1px solid #000;padding:5px;">${brl(d.meses.reduce((s, m) => s + m.encomendas, 0))}</td><td style="border:1px solid #000;padding:5px;">${brl(d.meses.reduce((s, m) => s + m.outras, 0))}</td><td style="border:1px solid #000;padding:5px;"><b>${brl(d.total)}</b></td></tr></tfoot></table>
+    <p style="font-size:9pt;margin-top:10px;">Gerado em ${esc(d.geradoEm)} pelo sistema da loja. Documento de apoio: confira a classificação (comércio, indústria, serviços) e o que teve nota fiscal com o seu contador.</p></div>`);
+}
+async function salvarMeiCfg() {
+  if (!(await exigirPin('alterar os dados do MEI'))) return;
+  const lim = parseFloat($('meiLimite').value) || 0, ab = $('meiAbertura').value;
+  setExtra('mei', { limite: lim > 0 ? lim : 81000, abertura: ab || '' }); mostrarMsg('msgMei', 'Salvo.', true); if (meiDados) renderMei();
+}
+function carregarMeiCfgNaTela() { if (!$('meiLimite')) return; const c = meiCfg(); $('meiLimite').value = c.limite; $('meiAbertura').value = c.abertura; }
+
 function exportarBackup() {
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([JSON.stringify(db, null, 2)], { type: 'application/json' }));

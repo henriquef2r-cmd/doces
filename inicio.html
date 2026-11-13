@@ -54,7 +54,7 @@
     document.getElementById('estado').textContent=e.join(' · ');}catch(x){document.getElementById('estado').textContent='';}
   function copiar(){var l=new URL('encomenda.html',location.href).href;var m=document.getElementById('msg');
     (navigator.clipboard?navigator.clipboard.writeText(l):Promise.reject()).then(function(){m.textContent='Link copiado: '+l;},function(){m.textContent=l;});}
-  var VERSAO='13/11/2026 · v18';document.getElementById('versao').textContent=VERSAO;
+  var VERSAO='13/11/2026 · v19';document.getElementById('versao').textContent=VERSAO;
   async function atualizarApp(){try{if('serviceWorker' in navigator){var rs=await navigator.serviceWorker.getRegistrations();for(var i=0;i<rs.length;i++)await rs[i].unregister();}
     if(window.caches){var ks=await caches.keys();for(var j=0;j<ks.length;j++)await caches.delete(ks[j]);}}catch(e){}
     location.replace(location.pathname+'?v='+Date.now());}
