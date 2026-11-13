@@ -3629,9 +3629,11 @@ function mostrarTroco(troco, recebido, total) {
   $('trocoValor').textContent = brl(troco);
   $('trocoInfo').textContent = `Recebido ${brl(recebido)} · Total ${brl(total)}`;
   $('trocoNotas').textContent = textoNotas(troco);
-  abrirModal('modalTroco');
-  setTimeout(() => { const b = $('trocoOk'); if (b) b.focus(); }, 60);
+  $('modalTroco').classList.add('aberto');   // não rouba o foco: com a pistola, o próximo código lido fecha esta tela e entra normalmente
+  clearTimeout(trocoTimer); trocoTimer = setTimeout(() => $('modalTroco').classList.remove('aberto'), 60000);
 }
+let trocoTimer = null;
+document.addEventListener('keydown', e => { if ($('modalTroco') && $('modalTroco').classList.contains('aberto')) { $('modalTroco').classList.remove('aberto'); focarLeitor(); } }, true);
 function cancelarPix() { pagamentoEmAndamento = null; fecharModal('modalPix'); atualizarVisor(); }
 function confirmarPix() { fecharModal('modalPix'); if (pagamentoEmAndamento && pagamentoEmAndamento.partes.some(x => x.forma === 'Dinheiro')) abrirDinheiro(); else concluirVenda(); }
 
