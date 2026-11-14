@@ -57,7 +57,7 @@
     if(!id){m.style.color='#b3261e';m.textContent='Este aparelho ainda não está conectado à planilha. Conecte em Bomboniere → Config, ou pegue o link no menu da planilha (🍬 Loja → Link de encomendas / Link do catálogo da bomboniere).';return;}
     m.style.color='';var l=new URL(pagina,location.href).href+'?s='+id;
     (navigator.clipboard?navigator.clipboard.writeText(l):Promise.reject()).then(function(){m.textContent='Link copiado: '+l;},function(){m.textContent=l;});}
-  var VERSAO='13/11/2026 · v21';document.getElementById('versao').textContent=VERSAO;
+  var VERSAO='13/11/2026 · v22';document.getElementById('versao').textContent=VERSAO;
   async function atualizarApp(){try{if('serviceWorker' in navigator){var rs=await navigator.serviceWorker.getRegistrations();for(var i=0;i<rs.length;i++)await rs[i].unregister();}
     if(window.caches){var ks=await caches.keys();for(var j=0;j<ks.length;j++)await caches.delete(ks[j]);}}catch(e){}
     location.replace(location.pathname+'?v='+Date.now());}

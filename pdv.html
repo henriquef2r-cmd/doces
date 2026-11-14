@@ -747,13 +747,13 @@
 </div></div>
 
 <div class="fundo-modal" id="modalCliente"><div class="modal">
-  <h3>👤 Cliente desta venda</h3>
+  <h3 id="clTitulo">👤 Cliente desta venda</h3>
   <input id="clBusca" type="search" placeholder="Buscar por nome ou telefone..." oninput="renderListaCliente()" autocomplete="off" style="margin-bottom:8px;">
   <div id="clLista" style="max-height:240px;overflow:auto;"></div>
   <label style="margin-top:10px;">Cliente novo</label>
   <div class="grid2"><div class="campo"><input id="clNome" placeholder="Nome" autocomplete="off"></div><div class="campo"><input id="clTel" placeholder="WhatsApp com DDD" inputmode="tel"></div></div>
   <div id="clMsg" class="msg"></div>
-  <div class="botoes"><button class="acao secundario" onclick="fecharModal('modalCliente')">Voltar</button><button class="acao" onclick="novoClienteVenda()">Cadastrar e usar</button></div>
+  <div class="botoes"><button class="acao secundario" onclick="vendaVincular=null;fecharModal('modalCliente')">Voltar</button><button id="clTirar" class="acao secundario" style="display:none" onclick="aplicarClienteNaVenda(null)">Tirar cliente</button><button class="acao" onclick="novoClienteVenda()">Cadastrar e usar</button></div>
 </div></div>
 
 <div class="fundo-modal" id="modalEncomendas"><div class="modal">
@@ -3979,7 +3979,7 @@ function renderRelatorio() {
   $('tabelaVendas').innerHTML = noPeriodo.slice(0, 300).map(v => `
     <tr class="${v.status === 'ESTORNADA' ? 'estornada' : ''}"><td>${new Date(v.data).toLocaleString('pt-BR')}</td>
     <td>${v.itens.reduce((s, i) => s + i.qtd, 0)} item(ns)</td><td>${esc(v.pagamento)}${v.cliente ? '<br><span class="ajuda">' + esc(v.cliente.nome) + '</span>' : ''}</td><td>${brl(v.total)}</td>
-    <td>${v.status === 'ESTORNADA' ? '<span class="badge estornada" title="' + esc(v.motivoEstorno || '') + '">Estornada</span>' : `<button class="perigo" onclick="pedirEstorno('${v.id}')">Estornar</button>`}</td></tr>`).join('');
+    <td>${v.status === 'ESTORNADA' ? '<span class="badge estornada" title="' + esc(v.motivoEstorno || '') + '">Estornada</span>' : `<button class="acao secundario" style="padding:4px 8px;" title="${v.cliente ? 'Trocar o cliente' : 'Informar quem comprou'}" onclick="vincularCliente('${v.id}')">👤</button> <button class="acao secundario" style="padding:4px 8px;" title="Recibo em PDF" onclick="reciboPdf('${v.id}')">🧾</button> <button class="perigo" onclick="pedirEstorno('${v.id}')">Estornar</button>`}</td></tr>`).join('');
   $('vendasVazio').style.display = noPeriodo.length ? 'none' : 'block';
 
   renderPainelDia(); renderSugestoes(); renderFiado(); renderCalendario();
@@ -4007,7 +4007,8 @@ function confirmarEstorno() {
   v.status = 'ESTORNADA'; v.estornadaEm = new Date().toISOString(); v.motivoEstorno = motivo;
   v.itens.forEach(i => { const p = db.produtos.find(x => x.id === i.id); if (p) { p.estoque += i.qtd; p.atualizado = v.estornadaEm; enfileirar('produto', v.baixaServidor ? Object.assign({}, p, { semEstoque: true, delta: i.qtd }) : p); } });
   enfileirar('estorno', Object.assign({ id: v.id, data: v.estornadaEm, motivo }, v.baixaServidor ? { baixaServidor: true, itens: v.itens.map(i => ({ id: i.id, qtd: i.qtd })) } : {}));
-  db.fiado.filter(f => f.vendaId === v.id && (f.tipo === 'pontos' || f.tipo === 'resgate') && f.valor > 0).forEach(f => lancarFiado({ clienteId: f.clienteId, cliente: f.cliente, tipo: f.tipo, valor: -f.valor, vendaId: v.id, obs: 'estorno' }));
+  { const pt = pontosDaVenda(v.id); Object.keys(pt).forEach(cid => { if (pt[cid].valor > 0) lancarFiado({ clienteId: cid, cliente: pt[cid].nome, tipo: 'pontos', valor: -pt[cid].valor, vendaId: v.id, obs: 'estorno' }); }); }
+  db.fiado.filter(f => f.vendaId === v.id && f.tipo === 'resgate' && f.valor > 0).forEach(f => lancarFiado({ clienteId: f.clienteId, cliente: f.cliente, tipo: 'resgate', valor: -f.valor, vendaId: v.id, obs: 'estorno' }));
   if (v.cliente) { const pf = partesDe(v).find(x => x.forma === 'Fiado'); if (pf) lancarFiado({ clienteId: v.cliente.id, cliente: v.cliente.nome, tipo: 'estorno', valor: pf.valor, vendaId: v.id }); }
   const cx = db.caixas.find(c => c.id === v.caixaId); if (cx) enfileirar('caixa', dadosCaixa(cx));
   salvarDB();
@@ -4621,7 +4622,7 @@ async function compartilharRecibo(v) {
   if (navigator.share) { try { await navigator.share({ title: 'Recibo', text: txt }); return; } catch (e) { if (e && e.name === 'AbortError') return; } }
   try { await navigator.clipboard.writeText(txt); mostrarToast('Recibo copiado. Cole no WhatsApp.'); } catch (e) { alert(txt); }
 }
-function vendaConcluidaCelular(v) { mostrarToast(`✓ Venda de <b>${brl(v.total)}</b> registrada${v.troco ? ' · troco <b>' + brl(v.troco) + '</b>' : ''}`, db.config.impressora && !db.config.impAuto ? '🖨️ Imprimir' : 'Recibo', () => db.config.impressora && !db.config.impAuto ? imprimirTermica(reciboTermico(v)) : compartilharRecibo(v), 8000); }
+function vendaConcluidaCelular(v) { mostrarToast(`✓ Venda de <b>${brl(v.total)}</b> registrada${v.troco ? ' · troco <b>' + brl(v.troco) + '</b>' : ''}`, db.config.impressora && !db.config.impAuto ? '🖨️ Imprimir' : 'Recibo PDF', () => db.config.impressora && !db.config.impAuto ? imprimirTermica(reciboTermico(v)) : reciboPdf(v.id), 8000); }
 async function copiarPix() {
   const t = (pagamentoEmAndamento && pagamentoEmAndamento.codigo) || '';
   if (!t) return;
@@ -5240,6 +5241,7 @@ function fidelidadeDe(id) {
   return { acumulado: pts, disponivel: Math.max(r2(Math.floor(pts / f.gasto + 1e-9) * f.premio - res), 0), falta: r2(f.gasto - (pts % f.gasto)), premio: f.premio, gasto: f.gasto };
 }
 function abrirCliente() {
+  vendaVincular = null; $('clTitulo').textContent = '👤 Cliente desta venda'; $('clTirar').style.display = 'none';
   $('clBusca').value = ''; $('clNome').value = ''; $('clTel').value = ''; $('clMsg').className = 'msg';
   renderListaCliente(); abrirModal('modalCliente');
 }
@@ -5248,7 +5250,7 @@ function renderListaCliente() {
   $('clLista').innerHTML = clientesFiado().filter(c => !q || cfNorm(c.nome).includes(q) || String(c.telefone).includes(q)).slice(0, 30).map(c => { const fd = fidelidadeDe(c.id);
     return `<button type="button" class="acao secundario" style="display:flex;justify-content:space-between;width:100%;margin-bottom:6px;" onclick="usarCliente('${c.id}')"><span>${esc(c.nome)}</span><span>${fd && fd.disponivel > 0 ? '🎁 ' + brl(fd.disponivel) : c.saldo > 0 ? 'deve ' + brl(c.saldo) : ''}</span></button>`; }).join('') || '<div class="ajuda">Nenhum cliente ainda. Cadastre abaixo.</div>';
 }
-function usarCliente(id) { const c = clientesFiado().find(x => x.id === id); if (!c) return; clienteVenda = { id: c.id, nome: c.nome, telefone: c.telefone }; premioUsado = 0; fecharModal('modalCliente'); renderCarrinho(); }
+function usarCliente(id) { const c = clientesFiado().find(x => x.id === id); if (!c) return; if (vendaVincular) { aplicarClienteNaVenda({ id: c.id, nome: c.nome, telefone: c.telefone }); return; } clienteVenda = { id: c.id, nome: c.nome, telefone: c.telefone }; premioUsado = 0; fecharModal('modalCliente'); renderCarrinho(); }
 function novoClienteVenda() {
   const nome = $('clNome').value.trim(), telefone = $('clTel').value.replace(/\D/g, '');
   if (nome.length < 2) { mostrarMsg('clMsg', 'Escreva o nome do cliente.', false); return; }
@@ -5567,6 +5569,106 @@ async function salvarMeiCfg() {
 }
 function carregarMeiCfgNaTela() { if (!$('meiLimite')) return; const c = meiCfg(); $('meiLimite').value = c.limite; $('meiAbertura').value = c.abertura; }
 
+// ── cliente depois da venda ──
+let vendaVincular = null;
+function vincularCliente(idVenda) {
+  const v = db.vendas.find(x => x.id === idVenda); if (!v) return;
+  if (v.status !== 'OK') { alert('Venda estornada: não dá para mudar o cliente.'); return; }
+  abrirCliente(); vendaVincular = idVenda;
+  $('clTitulo').textContent = v.cliente ? `👤 Trocar o cliente da venda de ${brl(v.total)} (hoje: ${v.cliente.nome})` : `👤 Quem comprou? (venda de ${brl(v.total)}, ${new Date(v.data).toLocaleString('pt-BR')})`;
+  $('clTirar').style.display = v.cliente ? '' : 'none';
+}
+function pontosDaVenda(idVenda) {   // pontos de fidelidade desta venda, somados por cliente (o que já foi dado menos o que foi desfeito)
+  const m = {}; db.fiado.forEach(f => { if (f.vendaId === idVenda && f.tipo === 'pontos') { const k = m[f.clienteId] = m[f.clienteId] || { nome: f.cliente, valor: 0 }; k.valor = r2(k.valor + (Number(f.valor) || 0)); } });
+  return m;
+}
+function aplicarClienteNaVenda(c) {   // c = {id, nome, telefone} ou null para tirar o cliente
+  const v = db.vendas.find(x => x.id === vendaVincular); vendaVincular = null; if (!v) return;
+  if (partesDe(v).some(x => x.forma === 'Fiado') && !(c && v.cliente && v.cliente.id === c.id)) { alert('Esta venda foi no fiado: o cliente dela não pode ser trocado (a dívida está na conta dele).'); return; }
+  if (c && v.cliente && v.cliente.id === c.id) { fecharModal('modalCliente'); return; }
+  const antes = pontosDaVenda(v.id);
+  Object.keys(antes).forEach(cid => { if (antes[cid].valor > 0 && (!c || cid !== c.id)) lancarFiado({ clienteId: cid, cliente: antes[cid].nome, tipo: 'pontos', valor: -antes[cid].valor, vendaId: v.id, obs: 'troca de cliente' }); });
+  if (c) {
+    v.cliente = { id: c.id, nome: c.nome };
+    if (fidelidadeCfg() && !(antes[c.id] && antes[c.id].valor > 0)) lancarFiado({ clienteId: c.id, cliente: c.nome, tipo: 'pontos', valor: v.total, vendaId: v.id, obs: 'cliente informado depois da venda' });
+  } else delete v.cliente;
+  enfileirar('vendaCliente', { id: v.id, cliente: c ? c.nome : '' });
+  salvarDB(); fecharModal('modalCliente'); renderRelatorio(); sincronizar(false);
+  mostrarToast(c ? `✓ Venda ligada a ${esc(c.nome)}${fidelidadeCfg() ? ' (pontos de fidelidade somados)' : ''}` : '✓ Cliente tirado da venda');
+}
+
+// ── recibo em PDF com a logo e as cores da loja ──
+const COR = { marrom: [74, 47, 39], rosa: [237, 211, 204], rosaClaro: [248, 238, 234], dourado: [176, 138, 85], cinza: [120, 105, 98] };
+let logoDataUrl = null;
+async function carregarLogo() {
+  if (logoDataUrl !== null) return logoDataUrl;
+  try { const b = await (await fetch('logo.png')).blob(); logoDataUrl = await new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = rej; r.readAsDataURL(b); }); }
+  catch (e) { logoDataUrl = ''; }
+  return logoDataUrl;
+}
+const pdfBRL = v => brl(v).replace(/ /g, ' ');
+async function reciboPdfBlob(v) {   // desenha uma vez para medir a altura e outra com a altura exata (sem sobra em branco)
+  await cfLib('lib/jspdf.umd.min.js', 'jspdf');
+  const medida = await desenharRecibo(v, 700);
+  return (await desenharRecibo(v, Math.ceil(medida.yFim + 13))).blob;
+}
+async function desenharRecibo(v, H) {
+  const { jsPDF } = window.jspdf, logo = await carregarLogo(), W = 90, M = 7;
+  const medidor = new jsPDF({ unit: 'mm', format: [W, 400] });
+  medidor.setFont('helvetica', 'normal'); medidor.setFontSize(8.5);
+  const linhas = v.itens.map(i => { const st = i.subtotal != null ? i.subtotal : i.preco * i.qtd; return { nome: medidor.splitTextToSize(String(i.nome), 44), q: `${fmtQtd(i)} × ${pdfBRL(i.preco)}`, st, regra: i.regra || '' }; });
+  const partes = partesDe(v);
+  const d = new jsPDF({ unit: 'mm', format: [W, H] });
+  const cor = c => d.setTextColor(c[0], c[1], c[2]), fill = c => d.setFillColor(c[0], c[1], c[2]), traco = c => d.setDrawColor(c[0], c[1], c[2]);
+  // faixa rosa com a logo e o nome da loja
+  fill(COR.rosa); d.rect(0, 0, W, 56, 'F');
+  if (logo) { try { d.addImage(logo, 'PNG', (W - 34) / 2, 5, 34, 34); } catch (e) {} }
+  cor(COR.marrom); d.setFont('times', 'bold'); d.setFontSize(logo ? 10.5 : 14);
+  const nomeLoja = String(db.config.nome || 'Rick e Tati'), nl = d.splitTextToSize(nomeLoja, W - 2 * M);
+  d.text(nl, W / 2, logo ? 43 : 20, { align: 'center' });
+  d.setFont('helvetica', 'normal'); d.setFontSize(7.5); cor(COR.cinza);
+  if (db.config.endereco) d.text(d.splitTextToSize(String(db.config.endereco), W - 2 * M), W / 2, 43 + nl.length * 4.2 + 1.5, { align: 'center' });
+  fill(COR.dourado); d.rect(0, 56, W, 0.8, 'F');
+  let y = 65;
+  cor(COR.dourado); d.setFont('helvetica', 'bold'); d.setFontSize(8); d.text('R E C I B O', W / 2, y, { align: 'center' }); y += 5;
+  cor(COR.cinza); d.setFont('helvetica', 'normal'); d.setFontSize(7.5);
+  d.text(new Date(v.data).toLocaleString('pt-BR'), M, y); d.text('Venda ' + String(v.id).slice(-6).toUpperCase(), W - M, y, { align: 'right' }); y += 3;
+  traco(COR.dourado); d.setLineWidth(0.25); d.line(M, y, W - M, y); y += 5;
+  cor(COR.marrom); d.setFont('helvetica', 'bold'); d.setFontSize(7.5); d.text('ITEM', M, y); d.text('VALOR', W - M, y, { align: 'right' }); y += 2.5; d.line(M, y, W - M, y); y += 4.5;
+  linhas.forEach(l => {
+    d.setFont('helvetica', 'bold'); d.setFontSize(8.5); cor(COR.marrom); d.text(l.nome, M, y);
+    d.setFont('helvetica', 'bold'); d.text(pdfBRL(l.st), W - M, y, { align: 'right' });
+    y += l.nome.length * 3.9;
+    d.setFont('helvetica', 'normal'); d.setFontSize(7.5); cor(COR.cinza); d.text(l.q, M, y - 0.3);
+    if (l.regra) { y += 3.4; cor(COR.dourado); d.setFont('helvetica', 'italic'); d.text(l.regra, M, y - 0.3); }
+    y += 4.4 - (l.regra ? 0 : 0);
+  });
+  traco(COR.rosa); d.setLineWidth(0.4); d.line(M, y - 2, W - M, y - 2); y += 3;
+  if (v.desconto) { cor(COR.marrom); d.setFont('helvetica', 'normal'); d.setFontSize(8.5); d.text('Desconto', M, y); d.text('- ' + pdfBRL(v.desconto), W - M, y, { align: 'right' }); y += 6; }
+  // total
+  fill(COR.rosaClaro); d.roundedRect(M - 2, y - 5, W - 2 * M + 4, 12, 1.5, 1.5, 'F'); traco(COR.dourado); d.setLineWidth(0.3); d.roundedRect(M - 2, y - 5, W - 2 * M + 4, 12, 1.5, 1.5, 'S');
+  cor(COR.marrom); d.setFont('times', 'bold'); d.setFontSize(12); d.text('TOTAL', M + 1, y + 2.5); d.setFontSize(14); d.text(pdfBRL(v.total), W - M - 1, y + 2.8, { align: 'right' }); y += 14;
+  d.setFont('helvetica', 'normal'); d.setFontSize(8.5); cor(COR.marrom);
+  d.text('Pagamento', M, y); y += 4.5;
+  partes.forEach(p => { d.setFontSize(8.5); cor(COR.cinza); d.text(p.forma, M + 2, y); d.setFont('helvetica', 'bold'); cor(COR.marrom); d.text(pdfBRL(p.valor), W - M, y, { align: 'right' }); d.setFont('helvetica', 'normal'); y += 5; });
+  if (v.troco) { cor(COR.cinza); d.text('Recebido em dinheiro', M + 2, y); d.text(pdfBRL(v.recebido || 0), W - M, y, { align: 'right' }); y += 5; cor(COR.marrom); d.setFont('helvetica', 'bold'); d.text('Troco', M + 2, y); d.text(pdfBRL(v.troco), W - M, y, { align: 'right' }); d.setFont('helvetica', 'normal'); y += 6; }
+  if (v.cliente) { cor(COR.cinza); d.setFontSize(8.5); d.text('Cliente: ', M, y); cor(COR.marrom); d.setFont('helvetica', 'bold'); d.text(String(v.cliente.nome), M + d.getTextWidth('Cliente: '), y); d.setFont('helvetica', 'normal'); y += 6; }
+  if (v.fidelidade) { cor(COR.dourado); d.setFont('helvetica', 'italic'); d.setFontSize(8); const f = d.splitTextToSize(String(v.fidelidade), W - 2 * M); d.text(f, W / 2, y, { align: 'center' }); y += f.length * 4 + 3; }
+  // rodapé
+  y += 3; fill(COR.dourado); d.rect(M + 12, y - 3, W - 2 * M - 24, 0.3, 'F');
+  cor(COR.marrom); d.setFont('times', 'italic'); d.setFontSize(11); d.text('Obrigado pela preferência!', W / 2, y + 3, { align: 'center' });
+  d.setFont('helvetica', 'normal'); d.setFontSize(6.8); cor(COR.cinza); d.text('Comprovante não fiscal', W / 2, y + 8, { align: 'center' });
+  fill(COR.rosa); d.rect(0, H - 4, W, 4, 'F');
+  return { blob: d.output('blob'), yFim: y + 8 };
+}
+async function reciboPdf(idVenda, soBaixar) {
+  const v = typeof idVenda === 'string' ? db.vendas.find(x => x.id === idVenda) : idVenda; if (!v) return;
+  let blob; try { blob = await reciboPdfBlob(v); } catch (e) { mostrarToast('Não consegui gerar o PDF agora (precisa abrir o aplicativo online uma vez). Enviando como texto.'); return compartilharRecibo(v); }
+  const nome = `recibo-${new Date(v.data).toISOString().slice(0, 10)}-${String(v.id).slice(-6).toUpperCase()}.pdf`, arq = new File([blob], nome, { type: 'application/pdf' });
+  if (!soBaixar && navigator.canShare && navigator.canShare({ files: [arq] })) { try { await navigator.share({ files: [arq], title: 'Recibo ' + (db.config.nome || ''), text: 'Recibo da sua compra' }); return; } catch (e) { if (e && e.name === 'AbortError') return; } }
+  const url = URL.createObjectURL(blob), a = document.createElement('a'); a.href = url; a.download = nome; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 60000);
+  mostrarToast('Recibo em PDF salvo: ' + esc(nome));
+}
 function exportarBackup() {
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([JSON.stringify(db, null, 2)], { type: 'application/json' }));
