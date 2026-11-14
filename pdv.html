@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Bomboniere PDV</title>
-<meta name="theme-color" content="#6B4226">
+<meta name="theme-color" content="#4F2B20">
 <link rel="icon" href="icone.svg">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icone-192.png">
@@ -12,10 +12,10 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Rick e Tati">
 <style>
-  :root{--azul:#6B4226;--azul-claro:#F3E9E1;--rosa-claro:#FDECEE;--verde:#2e7d32;--vermelho:#b3261e;--cinza:#666;--borda:#E2D6CC;--bg:#F8F4F0;}
+  :root{--ouro:#BA8543;--azul:#4F2B20;--azul-claro:#FAE9E5;--rosa-claro:#FDECEE;--verde:#2e7d32;--vermelho:#b3261e;--cinza:#666;--borda:#EBD6CF;--bg:#FDF6F3;}
   *{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,'Segoe UI',Roboto,sans-serif;}
   body{background:var(--bg);color:#222;min-height:100vh;}
-  header{background:var(--azul);color:#fff;padding:12px 20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;}
+  header{background:var(--azul);color:#fff;padding:12px 20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;;border-bottom:3px solid #BA8543}
   header h1{font-size:18px;}
   header .sub{font-size:11px;opacity:.9;}
   .pill{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;background:rgba(255,255,255,.18);margin-left:6px;cursor:pointer;}
@@ -200,8 +200,9 @@
 <div id="visorClienteStandalone"></div>
 
 <header>
-  <div>
-    <h1 id="nomeLojaHeader">🍬 Bomboniere PDV</h1>
+  <img src="logo.png" alt="" width="38" height="38" style="border-radius:50%;flex:0 0 auto;margin-right:-4px;background:#F4D7D1;">
+  <div style="flex:1;min-width:0;">
+    <h1 id="nomeLojaHeader">Bomboniere PDV</h1>
     <div class="sub" id="dataHoraAtual"></div>
   </div>
   <div class="sub">
@@ -4023,7 +4024,7 @@ function carregarConfigNaTela() {
   const c = db.config;
   $('cfgNome').value = c.nome || ''; $('cfgEndereco').value = c.endereco || ''; $('cfgChavePix').value = c.chavePix || '';
   $('cfgRecebedor').value = c.recebedor || ''; $('cfgCidade').value = c.cidade || ''; $('cfgUrl').value = c.url || ''; $('cfgToken').value = c.token || ''; $('cfgPin').value = c.pin || '';
-  $('nomeLojaHeader').textContent = '🍬 ' + (c.nome || 'Bomboniere PDV');
+  $('nomeLojaHeader').textContent = c.nome || 'Bomboniere PDV';
 }
 async function salvarConfig() {
   const novoPin = $('cfgPin').value.trim();
@@ -5263,7 +5264,7 @@ function renderClienteVenda() {
   const el = $('clienteVendaBox'); if (!el) return;
   if (!clienteVenda) { el.innerHTML = ''; return; }
   const fd = fidelidadeDe(clienteVenda.id);
-  el.innerHTML = `<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:#F3E9E1;border-radius:8px;padding:8px 10px;margin-top:10px;font-size:13px;"><b>👤 ${esc(clienteVenda.nome)}</b>` +
+  el.innerHTML = `<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:#FAE9E5;border-radius:8px;padding:8px 10px;margin-top:10px;font-size:13px;"><b>👤 ${esc(clienteVenda.nome)}</b>` +
     (fd ? `<span class="ajuda">${fd.disponivel > 0 ? 'prêmio disponível ' + brl(fd.disponivel) : 'faltam ' + brl(fd.falta) + ' para ganhar ' + brl(fd.premio)}</span>` + (fd.disponivel > 0 ? `<button class="acao${premioUsado ? ' secundario' : ' verde'}" style="padding:4px 10px;" onclick="usarPremio()">${premioUsado ? 'Não usar prêmio' : '🎁 Usar prêmio'}</button>` : '') : '') +
     `<button class="perigo" style="margin-left:auto;" onclick="tirarCliente()">✕</button></div>`;
 }
@@ -5598,7 +5599,7 @@ function aplicarClienteNaVenda(c) {   // c = {id, nome, telefone} ou null para t
 }
 
 // ── recibo em PDF com a logo e as cores da loja ──
-const COR = { marrom: [74, 47, 39], rosa: [237, 211, 204], rosaClaro: [248, 238, 234], dourado: [176, 138, 85], cinza: [120, 105, 98] };
+const COR = { marrom: [79, 43, 32], rosa: [244, 215, 209], rosaClaro: [250, 233, 229], dourado: [186, 133, 67], cinza: [128, 105, 96] };   // cores da logo da loja
 let logoDataUrl = null;
 async function carregarLogo() {
   if (logoDataUrl !== null) return logoDataUrl;

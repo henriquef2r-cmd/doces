@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
 <title>Loja</title>
-<meta name="theme-color" content="#6B4226">
+<meta name="theme-color" content="#4F2B20">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Rick e Tati">
@@ -12,10 +12,10 @@
 <link rel="icon" href="icone.svg">
 <link rel="apple-touch-icon" href="icone-180.png">
 <style>
-  :root{--azul:#6B4226;--azul-claro:#F3E9E1;--rosa:#FBEDEA;--verde:#2e7d32;--vermelho:#b3261e;--laranja:#FFF4E0;--bg:#F8F4F0;--borda:#E2D6CC;}
+  :root{--ouro:#BA8543;--azul:#4F2B20;--azul-claro:#FAE9E5;--rosa:#FBEDEA;--verde:#2e7d32;--vermelho:#b3261e;--laranja:#FFF4E0;--bg:#FDF6F3;--borda:#EBD6CF;}
   *{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,'Segoe UI',Roboto,sans-serif;-webkit-tap-highlight-color:transparent;}
   body{background:var(--bg);color:#222;padding-bottom:150px;}
-  header{background:var(--azul);color:#fff;padding:16px 16px 14px;position:sticky;top:0;z-index:5;}
+  header{background:var(--azul);color:#fff;padding:16px 16px 14px;position:sticky;top:0;z-index:5;;border-bottom:3px solid #BA8543}
   header h1{font-size:18px;}
   header .sub{font-size:11px;opacity:.85;margin-top:2px;display:flex;justify-content:space-between;}
   header button{background:rgba(255,255,255,.18);border:none;color:#fff;border-radius:14px;padding:3px 10px;font-size:11px;}
@@ -34,7 +34,7 @@
   .muted{color:#888;font-size:12px;}
   .vazio{color:#999;font-size:13px;text-align:center;padding:14px 0;}
   .chip{display:inline-block;font-size:11px;font-weight:700;padding:2px 9px;border-radius:12px;background:#eee;color:#555;white-space:nowrap;}
-  .chip.Encomendado{background:#EFE3D6;color:#6B4226;}
+  .chip.Encomendado{background:#EFE3D6;color:#4F2B20;}
   .chip.Em{background:#FFF4E0;color:#8a5300;}
   .chip.Pronto{background:#e8f5e9;color:var(--verde);}
   .chip.Entregue{background:#eee;color:#666;}
@@ -43,7 +43,7 @@
   .pg{display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px;margin-top:6px;}
   .pg.ok{background:#e8f5e9;color:var(--verde);}
   .pg.esp{background:#FFF4E0;color:#8a5300;}
-  .pg.conf{background:#EFE3D6;color:#6B4226;}
+  .pg.conf{background:#EFE3D6;color:#4F2B20;}
   .clicavel{cursor:pointer;}
   .clicavel:active{opacity:.7;}
   .linha.clicavel span:first-child::after{content:' ›';color:#b9a595;}
@@ -94,7 +94,7 @@
 </head>
 <body>
 <header>
-  <h1 id="tLoja">Loja</h1><a href="inicio.html" style="position:absolute;right:14px;top:14px;color:#fff;text-decoration:none;font-size:12px;font-weight:700;background:rgba(255,255,255,.2);padding:4px 10px;border-radius:14px;">⌂ Início</a>
+  <img src="logo.png" alt="" width="40" height="40" style="float:left;margin:0 10px 0 0;border-radius:50%;background:#F4D7D1;"><h1 id="tLoja">Loja</h1><a href="inicio.html" style="position:absolute;right:14px;top:14px;color:#fff;text-decoration:none;font-size:12px;font-weight:700;background:rgba(255,255,255,.2);padding:4px 10px;border-radius:14px;">⌂ Início</a>
   <div class="sub"><span id="tAtual">carregando...</span><button onclick="carregar()">↻ Atualizar</button></div>
 </header>
 
@@ -316,7 +316,7 @@
 </div>
 <div class="carregando oculto" id="semConfig" style="flex-direction:column;padding:30px;text-align:center;line-height:1.6;">
   <div style="font-size:40px;">🔗</div>
-  <b style="font-size:16px;color:#6B4226;">Abra pelo link da planilha</b>
+  <b style="font-size:16px;color:#4F2B20;">Abra pelo link da planilha</b>
   <div>Na planilha da loja, use 🍬 Loja → 📱 Link do app no celular e abra o link que ele mandar para o seu WhatsApp. Depois disso o app lembra a conexão.</div>
 </div>
 
@@ -410,7 +410,7 @@ function carregar() {
 }
 
 function render() {
-  $('tLoja').textContent = '🍬 ' + D.loja;
+  $('tLoja').textContent = D.loja;
   document.title = D.loja;
   $('tAtual').textContent = 'Atualizado ' + D.atualizado;
 

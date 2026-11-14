@@ -4,10 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Encomendas</title>
-<meta name="theme-color" content="#6B4226">
+<meta name="theme-color" content="#4F2B20">
 <link rel="icon" href="icone.svg">
 <style>
-  :root{--azul:#6B4226;--azul-claro:#F3E9E1;--rosa:#C98B6B;--rosa-claro:#FBEDEA;--verde:#2e7d32;--vermelho:#b3261e;--bg:#F8F4F0;--borda:#E2D6CC;--texto:#3B2A20;}
+  :root{--ouro:#BA8543;--azul:#4F2B20;--azul-claro:#FAE9E5;--rosa:#BA8543;--rosa-claro:#FBEDEA;--verde:#2e7d32;--vermelho:#b3261e;--bg:#FDF6F3;--borda:#EBD6CF;--texto:#3B2A20;}
   .desconto{background:#FFF3E0;color:#7A4A12;border-radius:12px;padding:10px 12px;font-size:13.5px;margin-bottom:10px;line-height:1.4;}
   .desconto.ganhou{background:#E8F5E9;color:#1B5E20;}
   .promo{position:fixed;left:0;right:0;bottom:calc(132px + env(safe-area-inset-bottom));z-index:6;padding:0 10px;pointer-events:none;}
@@ -37,7 +37,7 @@
   .dica-item a{color:inherit;}
   *{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,'Segoe UI',Roboto,sans-serif;-webkit-tap-highlight-color:transparent;}
   body{background:var(--bg);color:var(--texto);padding-bottom:250px;}
-  header{background:var(--azul);color:#fff;padding:22px 18px 18px;}
+  header{background:var(--azul);color:#fff;padding:22px 18px 18px;;border-bottom:3px solid #BA8543}
   header h1{font-size:21px;}
   header p{font-size:13px;opacity:.88;margin-top:4px;line-height:1.45;}
   main{padding:14px;max-width:620px;margin:0 auto;}
@@ -110,7 +110,7 @@
 </head>
 <body>
 <header>
-  <h1 id="hLoja">🎂 Encomendas</h1>
+  <img src="logo.png" alt="" width="52" height="52" style="float:left;margin:0 12px 0 0;border-radius:50%;background:#F4D7D1;"><h1 id="hLoja">🎂 Encomendas</h1>
   <p id="hSub">Escolha, marque a data e garanta seu pedido com o sinal.</p>
   <p id="hBomb" style="display:none;margin-top:8px"><a id="hBombA" style="color:#fff;font-weight:700;text-decoration:underline" href="#">🍬 Ver a bomboniere: balas, chocolates e salgadinhos</a></p>
 </header>

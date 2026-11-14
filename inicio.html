@@ -4,18 +4,18 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Rick e Tati</title>
-<meta name="theme-color" content="#6B4226">
+<meta name="theme-color" content="#4F2B20">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icone.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icone-192.png">
 <style>
-  :root{--marrom:#6B4226;--fundo:#F8F4F0;--cartao:#fff;--texto:#2b1c10;--suave:#7a6a5c;--verde:#2e7d32;}
-  @media (prefers-color-scheme: dark){:root{--fundo:#1d1610;--cartao:#2a2018;--texto:#f3e9e1;--suave:#b9a999;}}
+  :root{--marrom:#4F2B20;--fundo:#FDF6F3;--cartao:#fff;--texto:#2b1c10;--suave:#7a6a5c;--verde:#2e7d32;}
+  @media (prefers-color-scheme: dark){:root{--fundo:#1d1610;--cartao:#2a2018;--texto:#FAE9E5;--suave:#b9a999;}}
   *{box-sizing:border-box;margin:0;}
   body{font-family:-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--fundo);color:var(--texto);min-height:100vh;padding:0 16px calc(24px + env(safe-area-inset-bottom));}
-  header{background:var(--marrom);color:#fff;margin:0 -16px 20px;padding:calc(18px + env(safe-area-inset-top)) 16px 18px;}
+  header{border-bottom:3px solid #BA8543;background:var(--marrom);color:#fff;margin:0 -16px 20px;padding:calc(18px + env(safe-area-inset-top)) 16px 18px;}
   header h1{font-size:20px;} header p{font-size:13px;opacity:.85;margin-top:2px;}
   main{max-width:520px;margin:0 auto;}
   a.grande{display:flex;align-items:center;gap:16px;background:var(--cartao);border-radius:16px;padding:20px;margin-bottom:14px;text-decoration:none;color:inherit;box-shadow:0 2px 10px #0002;border:2px solid transparent;}
@@ -31,7 +31,7 @@
 </style>
 </head>
 <body>
-<header><h1 id="loja">🍬 Rick e Tati</h1><p>Doces, guloseimas e confeitaria</p></header>
+<header style="display:flex;align-items:center;gap:14px;"><img src="logo.png" alt="" width="64" height="64" style="border-radius:50%;background:#F4D7D1;flex:0 0 auto;"><div><h1 id="loja">Rick e Tati</h1><p>Doces · Salgados · Cafeteria · Confeitaria</p></div></header>
 <main>
   <a class="grande" href="pdv.html"><div class="ico">🍬</div><div><b>Bomboniere</b><span>Caixa, produtos, estoque, notas de compra, fiado</span></div></a>
   <a class="grande" href="index.html"><div class="ico">🎂</div><div><b>Encomendas e gestão</b><span>Bolos, produção, compras, despesas, cardápio, fichas técnicas</span></div></a>
@@ -49,7 +49,7 @@
   <div class="aviso">Versão <b id="versao"></b> · Se você fez uma atualização e ela não apareceu, toque no botão acima: ele apaga a cópia guardada neste aparelho e baixa a versão nova. Seus produtos, vendas e senhas <b>não são apagados</b>.</div>
 </main>
 <script>
-  try{var d=JSON.parse(localStorage.getItem('bomboniere_pdv_v1'));if(d&&d.config&&d.config.nome)document.getElementById('loja').textContent='🍬 '+d.config.nome;
+  try{var d=JSON.parse(localStorage.getItem('bomboniere_pdv_v1'));if(d&&d.config&&d.config.nome)document.getElementById('loja').textContent=d.config.nome;
     var e=[];e.push(d&&d.config&&d.config.url?'Bomboniere: conectada à planilha':'Bomboniere: ainda não conectada (Config)');
     document.getElementById('estado').textContent=e.join(' · ');}catch(x){document.getElementById('estado').textContent='';}
   function idPlanilha(){try{var d=JSON.parse(localStorage.getItem('bomboniere_pdv_v1'));var m=String(d&&d.config&&d.config.url||'').match(/\/macros\/s\/([\w-]+)\/exec/);return m?m[1]:'';}catch(e){return '';}}
@@ -57,7 +57,7 @@
     if(!id){m.style.color='#b3261e';m.textContent='Este aparelho ainda não está conectado à planilha. Conecte em Bomboniere → Config, ou pegue o link no menu da planilha (🍬 Loja → Link de encomendas / Link do catálogo da bomboniere).';return;}
     m.style.color='';var l=new URL(pagina,location.href).href+'?s='+id;
     (navigator.clipboard?navigator.clipboard.writeText(l):Promise.reject()).then(function(){m.textContent='Link copiado: '+l;},function(){m.textContent=l;});}
-  var VERSAO='13/11/2026 · v22';document.getElementById('versao').textContent=VERSAO;
+  var VERSAO='13/11/2026 · v23';document.getElementById('versao').textContent=VERSAO;
   async function atualizarApp(){try{if('serviceWorker' in navigator){var rs=await navigator.serviceWorker.getRegistrations();for(var i=0;i<rs.length;i++)await rs[i].unregister();}
     if(window.caches){var ks=await caches.keys();for(var j=0;j<ks.length;j++)await caches.delete(ks[j]);}}catch(e){}
     location.replace(location.pathname+'?v='+Date.now());}
